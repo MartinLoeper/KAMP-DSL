@@ -67,29 +67,30 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 *            <code>true</code>.
 	 */
 	def dispatch void infer(RuleFile element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-//		acceptor.accept(element.toClass(element.name)) [ theClass |
-//			nameForLookup = newHashMap
-//			
-//			theClass.members += element.rules.map [ rule |
-//				rule.toMethod(rule.lookupMethodName, typeRef(Set, typeRef(rule.returnType.instanceTypeName))) [
-//					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
-//					
-//					nameForLookup.put(null, "input")
-//					body = '''
-//						«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
-//
-//						«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
-//							«typeRef(Stream)».of(«rule.source.metaclass.name.toFirstLower»);
-//						
-//						«FOR x : rule.lookups»
-//							«x.generateCodeForRule(theClass)»
-//						«ENDFOR»
-//						
-//						return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
-//					'''
-//				]
-//			]
-//		]
+		acceptor.accept(element.toClass(element.name),
+			[ theClass |
+				nameForLookup = newHashMap
+				
+				theClass.members += element.rules.map [ rule |
+					rule.toMethod(rule.lookupMethodName, typeRef(Set, typeRef(rule.returnType.instanceTypeName))) [
+						parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
+						
+						nameForLookup.put(null, "input")
+						body = '''
+							«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
+	
+							«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
+								«typeRef(Stream)».of(«rule.source.metaclass.name.toFirstLower»);
+							
+							«FOR x : rule.lookups»
+								«x.generateCodeForRule(theClass)»
+							«ENDFOR»
+							
+							return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
+						'''
+					]
+				]
+			]);
 	}
 	
 	
