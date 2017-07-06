@@ -1,7 +1,11 @@
-/edu.kit.ipd.sdq.kamp.ruledsl.ide/
-/edu.kit.ipd.sdq.kamp.ruledsl.tests/
-/edu.kit.ipd.sdq.kamp.ruledsl.ui/
-/edu.kit.ipd.sdq.kamp.ruledsl.ui.tests/
+/edu.kit.ipd.sdq.kamp.ruledsl.ide/*
+/edu.kit.ipd.sdq.kamp.ruledsl.tests/*
+/edu.kit.ipd.sdq.kamp.ruledsl.ui/*
+/edu.kit.ipd.sdq.kamp.ruledsl.ui.tests/*
+!/edu.kit.ipd.sdq.kamp.ruledsl.ide/.gitkeep 
+!/edu.kit.ipd.sdq.kamp.ruledsl.tests/.gitkeep 
+!/edu.kit.ipd.sdq.kamp.ruledsl.ui/.gitkeep 
+!/edu.kit.ipd.sdq.kamp.ruledsl.ui.tests/.gitkeep 
 bin/
 src-gen/
 xtend-gen/

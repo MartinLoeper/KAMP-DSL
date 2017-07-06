@@ -1,0 +1,2 @@
+ALTER TABLE `config_reminder`
+	ADD COLUMN `performance_email` ENUM('MONTHLY', 'WEEKLY', 'STANDARD', 'OFF') NULL DEFAULT 'STANDARD' AFTER `inform_extension_email`;
