@@ -2,6 +2,8 @@
 This project contains the Domain Specific Language for the KAMP Framework.
 It was created in the course of student assistant activity at the Karlsruhe Institute of Technology / IPD.
 
+The old SVN Repository URL is: https://svnserver.informatik.kit.edu/i43/svn/code/Palladio/Addons/KAMPIntBIISRequirements/branches/generalized-KAMP-rule-generalization/KAMPRuleLanguage/
+
 ## Install
 - Download and Install [Eclipse IDE for Java Developers](http://www.eclipse.org/downloads/packages/eclipse-ide-java-developers/oxygenr)
 - Change file encoding to UTF-8: Window -> Preferences -> General -> Workspace : Text file encoding
