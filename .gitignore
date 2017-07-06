@@ -1,0 +1,7 @@
+/edu.kit.ipd.sdq.kamp.ruledsl.ide/
+/edu.kit.ipd.sdq.kamp.ruledsl.tests/
+/edu.kit.ipd.sdq.kamp.ruledsl.ui/
+/edu.kit.ipd.sdq.kamp.ruledsl.ui.tests/
+bin/
+src-gen/
+xtend-gen/
