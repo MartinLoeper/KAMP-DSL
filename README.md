@@ -16,3 +16,8 @@ It was created in the course of student assistant activity at the Karlsruhe Inst
 
 ## Configure
 - Navigate into the project *edu.kit.ipd.sdq.kamp.ruledsl* and into *src/edu.kit.ipd.sdq.kamp.ruledsl*. Right click on *GenerateKampRuleLanguage.mwe2* and Run As -> MWE2 Workflow
+- Run KAMP as Eclipse Application
+- Ignore minor errors in Vitruv and related projects
+- Create a file with .karl extensions inside a KAMP4BP project
+- You have to apply quick fixed proposed by the Editor
+- If you get an invalid Manifest Header Exception in the inner Eclipse, navigate into the inner Eclipse Workspace and into your Project -> META-INF -> MANIFEST.MF and remove trailing commas for *Require-Bundle:* attribute
