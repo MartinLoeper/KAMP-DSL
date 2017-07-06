@@ -1,0 +1,32 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: edu.kit.ipd.sdq.kamp.ruledsl
+Bundle-Vendor: My Company
+Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: edu.kit.ipd.sdq.kamp.ruledsl; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.xtext,
+ org.eclipse.xtext.xbase,
+ org.eclipse.equinox.common;bundle-version="3.5.0",
+ tools.vitruv.dsls.mirbase,
+ org.eclipse.xtext.common.types,
+ org.eclipse.xtext.xbase.lib,
+ org.antlr.runtime,
+ org.objectweb.asm;bundle-version="[5.0.1,6.0.0)";resolution:=optional,
+ org.eclipse.xtext.util,
+ org.eclipse.xtend.lib,
+ org.eclipse.emf.ecore,
+ org.eclipse.emf.common
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: edu.kit.ipd.sdq.kamp.ruledsl.services,
+ edu.kit.ipd.sdq.kamp.ruledsl.parser.antlr.internal,
+ edu.kit.ipd.sdq.kamp.ruledsl.scoping,
+ edu.kit.ipd.sdq.kamp.ruledsl.validation,
+ edu.kit.ipd.sdq.kamp.ruledsl.serializer,
+ edu.kit.ipd.sdq.kamp.ruledsl.parser.antlr,
+ edu.kit.ipd.sdq.kamp.ruledsl,
+ edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.util,
+ edu.kit.ipd.sdq.kamp.ruledsl.jvmmodel,
+ edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.impl,
+ edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage
+Import-Package: org.apache.log4j

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+	<extension point="org.eclipse.emf.ecore.generated_package">
+		<package 
+			uri = "http://www.kit.edu/ipd/sdq/kamp/ruledsl/KampRuleLanguage"
+			class = "edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRuleLanguagePackage"
+			genModel = "model/generated/KampRuleLanguage.genmodel" />
+	</extension>
+</plugin>
