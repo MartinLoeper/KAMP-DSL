@@ -15,4 +15,4 @@ It was created in the course of student assistant activity at the Karlsruhe Inst
 - Create working sets for each imported repository
 
 ## Configure
-- Navigate into the project *edu.kit.ipd.sdq.kamp.ruledsl* and into *src/edu.kit.ipd.sdq.kamp.ruledsl*. Right click on *GenerateKampRuleLanguage.mwe2* and Run As -> MWE2 Workflow.
+- Navigate into the project *edu.kit.ipd.sdq.kamp.ruledsl* and into *src/edu.kit.ipd.sdq.kamp.ruledsl*. Right click on *GenerateKampRuleLanguage.mwe2* and Run As -> MWE2 Workflow
