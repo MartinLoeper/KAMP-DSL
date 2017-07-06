@@ -13,7 +13,7 @@ RuleFile:
 ;
 
 KampRule:
-	'rule' name=ID ':'
+	'rule' name=ValidID ':'
 	source=UnnamedMetaclassReference
 	(lookups+=Lookup)+
 	';'

@@ -1,3 +1,4 @@
+
 package edu.kit.ipd.sdq.kamp.ruledsl.scoping
 
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.BackwardEReference
@@ -10,7 +11,6 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.scoping.IScope
 import tools.vitruv.dsls.mirbase.scoping.MirBaseScopeProviderDelegate
 
-import static edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRuleLanguagePackage.Literals.*
 import static tools.vitruv.dsls.mirbase.mirBase.MirBasePackage.Literals.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
@@ -19,12 +19,13 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 	override getScope(EObject context, EReference reference) {
 		if (context instanceof KampRule && reference.equals(METACLASS_REFERENCE__METACLASS))
 			return IScope.NULLSCOPE
-		else if (context instanceof BackwardEReference && reference.equals(LOOKUP))
+		else if (context instanceof BackwardEReference && reference.class.isAssignableFrom(METACLASS_REFERENCE__METACLASS.class))
 			return createFilteredEReferenceScope((context as BackwardEReference)?.metaclass,
 				(context as Lookup)?.previousMetaclass)
-		else if (context instanceof Lookup && reference.equals(LOOKUP))
+		else if (context instanceof Lookup && reference.class.isAssignableFrom(METACLASS_REFERENCE__METACLASS.class)) {
 			return createEReferenceScope((context as Lookup)?.previousMetaclass)
-
+		}
+		
 		return super.getScope(context, reference)
 	}
 	
