@@ -1,67 +1,59 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.generator
 
 import com.google.inject.Inject
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.generator.IFileSystemAccess
-import org.eclipse.xtext.generator.IGenerator
-import org.eclipse.xtext.xbase.compiler.JvmModelGenerator
-import org.w3c.dom.Entity
-import org.eclipse.xtext.generator.AbstractFileSystemAccess
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
+import java.io.InputStream
+import java.net.URL
+import java.util.Arrays
+import java.util.HashSet
+import java.util.List
+import java.util.Set
+import org.eclipse.core.resources.ICommand
+import org.eclipse.core.resources.IContainer
+import org.eclipse.core.resources.IFile
+import org.eclipse.core.resources.IFolder
 import org.eclipse.core.resources.IProject
-import org.eclipse.xtext.generator.IFileSystemAccessExtension2
-import org.eclipse.core.resources.ResourcesPlugin
+import org.eclipse.core.resources.IProjectDescription
 import org.eclipse.core.resources.IWorkspace
 import org.eclipse.core.resources.IWorkspaceRoot
+import org.eclipse.core.resources.IncrementalProjectBuilder
+import org.eclipse.core.resources.ResourcesPlugin
+import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.emf.mwe.core.monitor.ProgressMonitor
-import org.eclipse.core.runtime.ICoreRunnable
-import org.eclipse.core.runtime.jobs.Job
+import org.eclipse.core.runtime.NullProgressMonitor
+import org.eclipse.core.runtime.Path
 import org.eclipse.core.runtime.Status
 import org.eclipse.core.runtime.SubMonitor
-import org.eclipse.core.runtime.IStatus
-import org.eclipse.core.runtime.NullProgressMonitor
-import org.eclipse.core.resources.IProjectDescription
-import org.eclipse.jdt.core.JavaCore
-import java.util.Set
+import org.eclipse.core.runtime.SubProgressMonitor
+import org.eclipse.core.runtime.jobs.Job
+import org.eclipse.emf.common.util.URI
+import org.eclipse.emf.ecore.EPackage
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.jdt.core.IClasspathEntry
-import java.util.HashSet
-import java.util.Arrays
 import org.eclipse.jdt.core.IJavaProject
+import org.eclipse.jdt.core.JavaCore
 import org.eclipse.jdt.launching.IVMInstall
 import org.eclipse.jdt.launching.JavaRuntime
 import org.eclipse.jdt.launching.LibraryLocation
-import org.eclipse.emf.common.util.URI
-import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.RuleFile
-import org.eclipse.xtext.common.types.JvmDeclaredType
-import org.eclipse.core.runtime.IPath
-import org.eclipse.core.resources.IFolder
-import org.eclipse.jdt.core.IPackageFragmentRoot
-import java.util.ResourceBundle
-import org.eclipse.core.runtime.URIUtil
-import java.io.File
-import java.io.FileInputStream
-import org.eclipse.core.runtime.Path
 import org.eclipse.pde.core.project.IBundleProjectDescription
-import org.eclipse.pde.internal.core.PDECore
-import org.eclipse.core.resources.IncrementalProjectBuilder
-import org.eclipse.core.resources.ICommand
-import java.util.List
-import java.util.Iterator
-import org.eclipse.core.runtime.CoreException
-import org.eclipse.core.runtime.SubProgressMonitor
-import org.eclipse.core.resources.IFile
-import java.net.URL
-import org.eclipse.core.resources.IContainer
-import java.io.InputStream
-import java.io.IOException
-import java.io.ByteArrayInputStream
-import org.eclipse.emf.ecore.EPackage
-import org.eclipse.emf.ecore.EClass
-import tools.vitruv.framework.util.bridges.EclipseBridge
+import org.eclipse.xtext.common.types.JvmDeclaredType
+import org.eclipse.xtext.generator.IFileSystemAccess
+import org.eclipse.xtext.generator.IFileSystemAccessExtension2
+import org.eclipse.xtext.generator.IGenerator
+import org.eclipse.xtext.xbase.compiler.JvmModelGenerator
+import org.osgi.framework.Bundle
 import org.osgi.framework.BundleContext
 import org.osgi.framework.FrameworkUtil
-import org.osgi.framework.Bundle
+import tools.vitruv.framework.util.bridges.EclipseBridge
+import org.eclipse.core.runtime.Platform
+import org.eclipse.core.runtime.FileLocator
+import java.net.URISyntaxException
 
+// TODO support reload and exceptions
+// TODO load imports from .karl dynamically
 class KampRuleLanguageGenerator implements IGenerator {
 	
 	@Inject
@@ -115,7 +107,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 				monitor.subTask("Create source code project")
 			   	val IProject project = createProject(subMonitor.split(1), causingProjectName);
 			   	moveRuleSourceFile(subMonitor.split(1), project, sourceFileUri, javaFileName);
-			   	buildProject(project, subMonitor);
+			   	buildProject(project, subMonitor.split(1));
 			   	installProjectBundle(project)
 			   	monitor.done
 			   
@@ -129,7 +121,6 @@ class KampRuleLanguageGenerator implements IGenerator {
 	
 		
 	def installProjectBundle(IProject project) {
-		val String bundleName = "aaa"
 		val BundleContext bundlecontext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
 	    val Bundle b = bundlecontext.installBundle("file:C:\\Users\\Martin Löper\\KAMP Projekt\\runtime-New_configuration\\MartinTest1-rules\\bin");
 	    b.start();
@@ -142,7 +133,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 	   }
 	}
 	
-	def buildProject(IProject project, SubMonitor monitor) {
+	def buildProject(IProject project, IProgressMonitor monitor) {
 		project.build(IncrementalProjectBuilder.AUTO_BUILD, monitor);
 	}
 	
@@ -207,6 +198,9 @@ class KampRuleLanguageGenerator implements IGenerator {
 			    }
 			}
 			
+			// for service interface reference
+			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
+			
 			srcFolders.add(".")
 			
 			createManifest(projectName, requiredBundles, exportedPackages, progressMonitor, compilerProject);
@@ -248,6 +242,9 @@ class KampRuleLanguageGenerator implements IGenerator {
 //			System.arraycopy(oldEntries, 0, newEntries, 0, oldEntries.length);
 //			newEntries.set(oldEntries.length, JavaCore.newSourceEntry(root.getPath(), null));
 //			compilerJavaProject.setRawClasspath(newEntries, progressMonitor);
+
+			createActivator(compilerProject, progressMonitor)
+			createService(compilerProject, progressMonitor)
 		}
 		
 		return compilerProject
@@ -265,6 +262,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		bpContent.append("\n");
 		bpContent.append("output.. = bin/\n")
 		bpContent.append("bin.includes = META-INF/,.\n");
+
 		createFile("build.properties", project, bpContent.toString(), progressMonitor);
 	}
 
@@ -281,7 +279,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		var int j = 0;
 		for (String entry : requiredBundles) {
 			if(j != 0) {
-				maniContent.append(",\n");
+				maniContent.append(",");
 			}
 			maniContent.append(entry);
 			j++;
@@ -294,6 +292,10 @@ class KampRuleLanguageGenerator implements IGenerator {
 			}
 			maniContent.append("\n");
 		}
+		
+		// activate this plugin when one of its classes is loaded
+		maniContent.append("Bundle-ActivationPolicy: lazy\r\n");
+		maniContent.append("Bundle-Activator: Activator\r\n")
 		maniContent.append("Bundle-RequiredExecutionEnvironment: J2SE-1.5\r\n");
 
 		var IFolder metaInf = project.getFolder("META-INF");
@@ -394,4 +396,16 @@ class KampRuleLanguageGenerator implements IGenerator {
 
 		}
 	}
+	
+	def createActivator(IProject pluginProject, IProgressMonitor monitor) {
+        val Bundle bundle = FrameworkUtil.getBundle(class);
+		val InputStream stream = bundle.getEntry("resources/Activator.java").openStream;
+		pluginProject.getFile("Activator.java").create(stream, false, monitor)
+    }
+    
+    def createService(IProject pluginProject, IProgressMonitor monitor) {
+        val Bundle bundle = FrameworkUtil.getBundle(class);
+		val InputStream stream = bundle.getEntry("resources/RuleProviderImpl.java").openStream;
+		pluginProject.getFile("RuleProviderImpl.java").create(stream, false, monitor)
+    }
 }
