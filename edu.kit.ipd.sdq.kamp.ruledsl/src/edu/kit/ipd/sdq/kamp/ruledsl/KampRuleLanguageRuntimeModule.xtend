@@ -11,6 +11,7 @@ import edu.kit.ipd.sdq.kamp.ruledsl.scoping.KampRuleLanguageScopeProviderDelegat
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import tools.vitruv.dsls.mirbase.scoping.MirBaseQualifiedNameConverter
+import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator
 
 /**
  * Use this class to register components to be used at runtime / without the Equinox extension registry.
@@ -34,4 +35,7 @@ class KampRuleLanguageRuntimeModule extends AbstractKampRuleLanguageRuntimeModul
 		return KampRuleLanguageLinkingService
 	}
 	
+	override bindIGenerator() {
+		return KampRuleLanguageGenerator;
+	}
 }

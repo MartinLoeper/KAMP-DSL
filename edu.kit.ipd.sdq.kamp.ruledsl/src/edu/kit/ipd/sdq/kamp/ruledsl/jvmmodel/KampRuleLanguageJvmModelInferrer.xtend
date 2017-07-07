@@ -77,10 +77,10 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 						
 						nameForLookup.put(null, "input")
 						body = '''
-							«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
+							«typeRef(Set)»<«Resource»> allResources = «Collections».emptySet();
 	
-							«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
-								«typeRef(Stream)».of(«rule.source.metaclass.name.toFirstLower»);
+							«typeRef(java.util.stream.Stream)»<«rule.source.metaclass.instanceTypeName»> input =
+								«Stream».of(«rule.source.metaclass.name.toFirstLower»);
 							
 							«FOR x : rule.lookups»
 								«x.generateCodeForRule(theClass)»
