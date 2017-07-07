@@ -1,6 +1,7 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.generator
 
 import com.google.inject.Inject
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.RuleFile
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -48,12 +49,9 @@ import org.osgi.framework.Bundle
 import org.osgi.framework.BundleContext
 import org.osgi.framework.FrameworkUtil
 import tools.vitruv.framework.util.bridges.EclipseBridge
-import org.eclipse.core.runtime.Platform
-import org.eclipse.core.runtime.FileLocator
-import java.net.URISyntaxException
 
 // TODO support reload and exceptions
-// TODO load imports from .karl dynamically
+// TODO load bundle automatically if project exists
 class KampRuleLanguageGenerator implements IGenerator {
 	
 	@Inject
@@ -91,8 +89,25 @@ class KampRuleLanguageGenerator implements IGenerator {
         	println("Generated file is located under: " + uri);
         	name = fsa.getURI("").path.replace("/resource/", "").replace("/src-gen", "");
         } else {
-        	throw new UnsupportedOperationException("Wrong FileSystemAccess assigned by xText.");
+        	throw new IllegalStateException("Wrong FileSystemAccess assigned by xText.");
         }
+        
+        /*
+         * get import statements
+         */
+		val ruleFiles = resource.contents.filter[elist | elist instanceof RuleFile]
+		if(ruleFiles.empty) {
+			// TODO handle properly
+			throw new IllegalStateException("No RuleFile present in input file.");
+		}
+		val RuleFile ruleFile = ruleFiles.head as RuleFile
+		val imports = ruleFile.metamodelImports
+		
+		val packageUris = newHashSet
+		for(metamodellImport : imports) {
+			val package = metamodellImport.package as EPackage
+			packageUris.add(package.nsURI)
+		}
         
         val causingProjectName = name;
         val URI sourceFileUri = uri;
@@ -105,10 +120,24 @@ class KampRuleLanguageGenerator implements IGenerator {
 				val SubMonitor subMonitor = SubMonitor.convert(monitor, mainName, IProgressMonitor.UNKNOWN);
 				
 				monitor.subTask("Create source code project")
-			   	val IProject project = createProject(subMonitor.split(1), causingProjectName);
+			   	val boolean reload = root.getProject(name + "-rules").exists;
+			   	var IProject project;
+			   	
+			   	if(reload) {
+			   		
+			   	} else {
+			   		project = createProject(subMonitor.split(1), causingProjectName, packageUris);
+			   	}
+			   	
 			   	moveRuleSourceFile(subMonitor.split(1), project, sourceFileUri, javaFileName);
 			   	buildProject(project, subMonitor.split(1));
-			   	installProjectBundle(project)
+			   	
+			   	if(reload) {
+			   		registerProjectBundle()
+			   	} else {
+			   		installProjectBundle(project)
+			   	}
+			   	
 			   	monitor.done
 			   
 			   Status.OK_STATUS;
@@ -121,16 +150,20 @@ class KampRuleLanguageGenerator implements IGenerator {
 	
 		
 	def installProjectBundle(IProject project) {
+		// TODO get name by workspac methods
 		val BundleContext bundlecontext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
-	    val Bundle b = bundlecontext.installBundle("file:C:\\Users\\Martin Löper\\KAMP Projekt\\runtime-New_configuration\\MartinTest1-rules\\bin");
+	    // the bin directory of the plugin, i.e. "file:C:\\Users\\Martin Löper\\KAMP Projekt\\runtime-New_configuration\\MartinTest1-rules\\bin"
+	    val folder = project.getFolder("bin")
+	    val Bundle b = bundlecontext.installBundle("file:" + folder.location.toString);
 	    b.start();
 	    
 	    /* lookup the kamp dsl bundle */
-	   for(bundle : bundlecontext.bundles) {
-	   	 if(bundle.symbolicName.equals(BUNDLE_NAME)) {
-	   	 	// call method on bundle
-	   	 }
-	   }
+	    // see edu.kit.ipd.sdq.kamp4bp.core#calculateInterBusinessProcessPropagation
+//	   for(bundle : bundlecontext.bundles) {
+//	   	 if(bundle.symbolicName.equals(BUNDLE_NAME)) {
+//	   	 	// call method on bundle
+//	   	 }
+//	   }
 	}
 	
 	def buildProject(IProject project, IProgressMonitor monitor) {
@@ -146,7 +179,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 	}	
 	
 	// see: https://sdqweb.ipd.kit.edu/wiki/JDT_Tutorial:_Creating_Eclipse_Java_Projects_Programmatically
-	def createProject(IProgressMonitor progressMonitor, String name) {
+	def createProject(IProgressMonitor progressMonitor, String name, Set<String> packageUris) {
 		var IProject compilerProject = root.getProject(name + "-rules")
 				
 		if (!compilerProject.exists) {
@@ -190,11 +223,12 @@ class KampRuleLanguageGenerator implements IGenerator {
 			var registry = EPackage.Registry.INSTANCE;
 			for (String key : new HashSet<String>(registry.keySet())) {
 			    var ePackage = registry.getEPackage(key);
-			    // TODO request dynamically from import statements
-			    if(ePackage.nsURI.equals("http://palladiosimulator.org/PalladioComponentModel/5.1")) {
-			    	// taken from MirBaseQuickFixProvider
-			    	val String contributorName = EclipseBridge.getNameOfContributorOfExtension("org.eclipse.emf.ecore.generated_package", "uri", ePackage.nsURI)
-			   		requiredBundles.add(contributorName)
+			    for(packageUri : packageUris) {
+				    if(ePackage.nsURI.equals(packageUri)) {
+				    	// taken from MirBaseQuickFixProvider
+				    	val String contributorName = EclipseBridge.getNameOfContributorOfExtension("org.eclipse.emf.ecore.generated_package", "uri", ePackage.nsURI)
+				   		requiredBundles.add(contributorName)
+				    }
 			    }
 			}
 			

@@ -1,0 +1,22 @@
+In oder to use the bundle, use the following:
+
+// look for user defined
+	BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+
+   /* lookup the kamp dsl bundle */
+   for(Bundle bundle : bundleContext.getBundles()) {
+   	 if(bundle.getSymbolicName().equals(edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator.BUNDLE_NAME)) {
+   	 	// call method on bundle
+   		 System.out.println("Found bundle with additional propagation rules. State: " + bundle.getState());
+   		 if(bundle.getState() == Bundle.ACTIVE) {
+   			ServiceReference<?> serviceReference = bundleContext.getServiceReference(IRuleProvider.class.getName());
+   			IRuleProvider service = (IRuleProvider) bundleContext.getService(serviceReference);
+   			System.out.println(service.getRule());
+   			
+   			bundleContext.ungetService(serviceReference);
+   		 } else {
+   			 System.err.println("Bundle not activated??! Error.");
+   			 // TODO error
+   		 }
+   	 }
+   }
