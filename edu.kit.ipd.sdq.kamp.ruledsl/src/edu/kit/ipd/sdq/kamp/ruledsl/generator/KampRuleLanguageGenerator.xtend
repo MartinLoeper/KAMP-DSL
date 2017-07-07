@@ -49,6 +49,7 @@ import org.osgi.framework.Bundle
 import org.osgi.framework.BundleContext
 import org.osgi.framework.FrameworkUtil
 import tools.vitruv.framework.util.bridges.EclipseBridge
+import org.osgi.framework.wiring.FrameworkWiring
 
 // TODO support reload and exceptions
 // TODO load bundle automatically if project exists
@@ -57,8 +58,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 	@Inject
 	JvmModelGenerator jvmModelGenerator;
 	
-	val IWorkspace workspace = ResourcesPlugin.getWorkspace();
-    val IWorkspaceRoot root = workspace.getRoot();
+	static val IWorkspace workspace = ResourcesPlugin.getWorkspace();
+    static val IWorkspaceRoot root = workspace.getRoot();
 	
 	public static final String BUNDLE_NAME = "edu.kit.ipd.sdq.kamp.ruledsl.lookup.bundle";
         
@@ -120,43 +121,80 @@ class KampRuleLanguageGenerator implements IGenerator {
 				val SubMonitor subMonitor = SubMonitor.convert(monitor, mainName, IProgressMonitor.UNKNOWN);
 				
 				monitor.subTask("Create source code project")
-			   	val boolean reload = root.getProject(name + "-rules").exists;
+			   	val boolean reload = root.getProject(causingProjectName + "-rules").exists;
 			   	var IProject project;
 			   	
 			   	if(reload) {
-			   		
+			   		project = getProject(causingProjectName)
 			   	} else {
 			   		project = createProject(subMonitor.split(1), causingProjectName, packageUris);
 			   	}
-			   	
 			   	moveRuleSourceFile(subMonitor.split(1), project, sourceFileUri, javaFileName);
 			   	buildProject(project, subMonitor.split(1));
 			   	
-			   	if(reload) {
-			   		registerProjectBundle()
+			   	val Bundle dslBundle = getDslBundle;
+			   	if(dslBundle !== null) {
+			   		registerProjectBundle(project, dslBundle)
 			   	} else {
-			   		installProjectBundle(project)
+			   		installAndStartProjectBundle(project)
 			   	}
 			   	
 			   	monitor.done
 			   
 			   Status.OK_STATUS;
-			}
-	
+			}	
 		};
-		job.setUser(true);
+		// job.setUser(true);
 		job.schedule();
 	}	
 	
+	static def getDslBundle() {
+		val BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageGenerator).getBundleContext();
+	   	var Bundle cBundle = null;
+	    for(Bundle bundle : bundleContext.getBundles()) {
+	    	if(bundle.getSymbolicName().equals(edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator.BUNDLE_NAME)) {
+	   	  		cBundle = bundle;
+	   	  	}
+	    }
+	    
+	    return cBundle
+	}
+	
+	// unregisteres the given bundle if available and registers it again
+	static def registerProjectBundle(IProject project, Bundle bundle) {
+	    // if there was a bundle registered, wait for the shutdown
+	    if(bundle !== null) {
+	    	println("DSL Bundle found, uninstalling...")
+	    	bundle.uninstall
+	    	// is busy wait ok here as we are in a job?
+	    	while(bundle.state != Bundle.UNINSTALLED) {};
+	    	println("Bundle is finally uninstalled!")
+	    }
+	    
+	    println("Installing new bundle version...")
+	    installAndStartProjectBundle(project)
+	}
+	
+	// convenice method for external calls
+	// returns null if project does not exist, returns installed bundle otherwise
+	static def installAndStartProjectBundle(String callerProjectName) {
+		val IProject project = getProject(callerProjectName);
+		if(!project.exists) {
+			return null;	
+		}
 		
-	def installProjectBundle(IProject project) {
+		installAndStartProjectBundle(project)
+	}
+		
+	static def installAndStartProjectBundle(IProject project) {
 		// TODO get name by workspac methods
-		val BundleContext bundlecontext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
+		val BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageGenerator).getBundleContext();
 	    // the bin directory of the plugin, i.e. "file:C:\\Users\\Martin Löper\\KAMP Projekt\\runtime-New_configuration\\MartinTest1-rules\\bin"
 	    val folder = project.getFolder("bin")
-	    val Bundle b = bundlecontext.installBundle("file:" + folder.location.toString);
+	    val Bundle b = bundleContext.installBundle("file:" + folder.location.toString);
 	    b.start();
 	    
+	    return b;
 	    /* lookup the kamp dsl bundle */
 	    // see edu.kit.ipd.sdq.kamp4bp.core#calculateInterBusinessProcessPropagation
 //	   for(bundle : bundlecontext.bundles) {
@@ -170,17 +208,27 @@ class KampRuleLanguageGenerator implements IGenerator {
 		project.build(IncrementalProjectBuilder.AUTO_BUILD, monitor);
 	}
 	
-	def moveRuleSourceFile(SubMonitor monitor, IProject destinationProject, URI sourceFile, String jFileName) {		
+	def moveRuleSourceFile(IProgressMonitor monitor, IProject destinationProject, URI sourceFile, String jFileName) {		
 		val workspaceLocation = ResourcesPlugin.getWorkspace().getRoot().getLocation();
 		val sourcePath = new Path(workspaceLocation.toOSString + File.separator + sourceFile.toPlatformString(false));
 		val File srcFile = sourcePath.toFile
+		val IFile cFile = destinationProject.getFile(jFileName);
 		
-		destinationProject.getFile(jFileName).create(new FileInputStream(srcFile), false, monitor)
+		// delete file if present
+		if(cFile.exists) {
+			cFile.delete(true, monitor);
+		}
+		
+		cFile.create(new FileInputStream(srcFile), false, monitor)
 	}	
+	
+	static def getProject(String causingProjectName) {
+		return root.getProject(causingProjectName + "-rules")
+	}
 	
 	// see: https://sdqweb.ipd.kit.edu/wiki/JDT_Tutorial:_Creating_Eclipse_Java_Projects_Programmatically
 	def createProject(IProgressMonitor progressMonitor, String name, Set<String> packageUris) {
-		var IProject compilerProject = root.getProject(name + "-rules")
+		var IProject compilerProject = getProject(name)
 				
 		if (!compilerProject.exists) {
 			// if does not exist, create it
