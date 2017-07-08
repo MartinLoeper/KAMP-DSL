@@ -1,41 +1,10 @@
-	// look for user defined
-	BundleContext bundleContext = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
-
-	Bundle dslBundle = null;
-    /* lookup the kamp dsl bundle */
-    for(Bundle bundle : bundleContext.getBundles()) {
-    	if(bundle.getSymbolicName().equals(edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator.BUNDLE_NAME)) {
-   	  		dslBundle = bundle;
-   	  		break;
-   	  	}
-    }
-   
-    /* if the bundle is not already loaded, try to load in manually */
-    // TODO find the name of the calling project dynamically
-    String callerProjectName = "MartinTest1";
-    
-    if(dslBundle == null) {
-    	System.out.println("Registering bundle manually...");
-    	Bundle startedBundle = edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator.installAndStartProjectBundle(callerProjectName);
-    	// wait for bundle to start
-    	// TODO is busy waiting ok in KAMP here?
-    	while(startedBundle != null && startedBundle.getState() != Bundle.ACTIVE) {};
-    	
-    	dslBundle = startedBundle;
-    }
-    
-    if(dslBundle != null) {
- 		 System.out.println("Found bundle with additional propagation rules. State: " + dslBundle.getState());
- 		 if(dslBundle.getState() == Bundle.ACTIVE) {
- 			ServiceReference<?> serviceReference = bundleContext.getServiceReference(IRuleProvider.class.getName());
- 			IRuleProvider service = (IRuleProvider) bundleContext.getService(serviceReference);
- 			System.out.println(service.getRule());
- 			
- 			bundleContext.ungetService(serviceReference);
- 		 } else {
- 			 System.err.println("Bundle not activated??! Error.");
- 			 // TODO handle error
- 		 }
-    } else {
-    	System.err.println("Could not start custom DSL bundle.");
-    }
+ServiceReference<IRuleProvider> serviceReference = KampRuleLanguageFacade.getServiceReference();
+if(serviceReference != null) {
+	BundleContext bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
+	IRuleProvider service = bundleContext.getService(serviceReference);
+	
+	// call the rules
+	System.err.println(service.getRule());
+	
+	KampRuleLanguageFacade.unregisterService(serviceReference);
+}
