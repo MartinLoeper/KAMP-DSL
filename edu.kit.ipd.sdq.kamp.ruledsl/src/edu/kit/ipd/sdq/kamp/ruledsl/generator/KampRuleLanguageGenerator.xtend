@@ -49,11 +49,16 @@ import org.osgi.framework.Bundle
 import org.osgi.framework.BundleContext
 import org.osgi.framework.FrameworkUtil
 import tools.vitruv.framework.util.bridges.EclipseBridge
-import org.osgi.framework.wiring.FrameworkWiring
-import org.osgi.framework.ServiceReference
 
-// TODO support reload and exceptions
-// TODO load bundle automatically if project exists
+// TODO write a beautiful documentation
+// TODO exception handling
+// TODO add custom action for context menu
+// TODO get calling project in facade
+// TODO allow only one karl file or make bundle names generic, i.e. bound to project name -> do not allow more than one karl file
+// TODO allow max. one karl file per project
+// TODO design service api
+// TODO understand marking process
+// TODO create one class per rule, remove plugin name and give class a meaningful name based on rule + _ + random hash
 class KampRuleLanguageGenerator implements IGenerator {
 	
 	@Inject
@@ -62,6 +67,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 	static val IWorkspace workspace = ResourcesPlugin.getWorkspace();
     static val IWorkspaceRoot root = workspace.getRoot();
 	
+	// TODO bind to project name
 	public static final String BUNDLE_NAME = "edu.kit.ipd.sdq.kamp.ruledsl.lookup.bundle";
         
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
@@ -153,7 +159,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		val BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageGenerator).getBundleContext();
 	   	var Bundle cBundle = null;
 	    for(Bundle bundle : bundleContext.getBundles()) {
-	    	if(bundle.getSymbolicName().equals(edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator.BUNDLE_NAME)) {
+	    	if(bundle.getSymbolicName().equals(KampRuleLanguageGenerator.BUNDLE_NAME)) {
 	   	  		cBundle = bundle;
 	   	  	}
 	    }
