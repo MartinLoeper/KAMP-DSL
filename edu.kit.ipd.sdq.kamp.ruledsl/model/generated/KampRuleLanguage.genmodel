@@ -7,7 +7,6 @@
   <genPackages prefix="KampRuleLanguage" basePackage="edu.kit.ipd.sdq.kamp.ruledsl"
       disposableProviderFactory="true" fileExtensions="karl" ecorePackage="KampRuleLanguage.ecore#/">
     <genClasses ecoreClass="KampRuleLanguage.ecore#//RuleFile">
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute KampRuleLanguage.ecore#//RuleFile/name"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//RuleFile/rules"/>
     </genClasses>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//KampRule">

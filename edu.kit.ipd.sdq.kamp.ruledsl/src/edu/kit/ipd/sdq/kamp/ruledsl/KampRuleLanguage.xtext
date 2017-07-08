@@ -8,7 +8,7 @@ import "http://www.kit.edu/ipd/sdq/vitruvius/dsls/mirbase/MirBase" as mirbase
 
 RuleFile:
 	MirBaseFile
-	'plugin-name' ':' name=ValidID
+//	'plugin-name' ':' name=ValidID
 	(rules+=KampRule)+
 ;
 

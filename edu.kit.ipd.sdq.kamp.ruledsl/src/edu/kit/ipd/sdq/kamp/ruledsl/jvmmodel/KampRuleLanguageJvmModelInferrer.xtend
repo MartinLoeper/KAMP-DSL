@@ -26,6 +26,12 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
+import org.eclipse.xtext.common.types.TypesFactory
+import org.eclipse.xtext.common.types.util.TypeReferences
+import org.eclipse.xtext.common.types.JvmAnnotationType
+import org.eclipse.xtext.common.types.JvmAnnotationReference
+import java.util.stream.Collector
+import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRuleProvider
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -39,6 +45,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 * convenience API to build and initialize JVM types and their members.
 	 */
 	@Inject extension JvmTypesBuilder
+	
 
 	/** associates a variable name with a {@link Lookup} */
 	private Map<Lookup, String> nameForLookup;
@@ -66,30 +73,34 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 *            rely on linking using the index if isPreIndexingPhase is
 	 *            <code>true</code>.
 	 */
-	def dispatch void infer(RuleFile element, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {
-		acceptor.accept(element.toClass(element.name),
+	def dispatch void infer(KampRule rule, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {		
+		val className = rule.name.toFirstUpper + "Rule";
+		acceptor.accept(rule.toClass(className),
 			[ theClass |
+				// theClass.extendedInterfaces += theClass.typeRef(typeRef(String))
 				nameForLookup = newHashMap
-				
-				theClass.members += element.rules.map [ rule |
-					rule.toMethod(rule.lookupMethodName, typeRef(Set, typeRef(rule.returnType.instanceTypeName))) [
-						parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
+				theClass.superTypes += typeRef(IRuleProvider)
+							
+				val method = rule.toMethod(getMethodName(), typeRef(Set, typeRef(rule.returnType.instanceTypeName))) [
+					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
+					
+					nameForLookup.put(null, "input")
+					body = '''
+						«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
+
+						«typeRef(java.util.stream.Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
+							«Stream».of(«rule.source.metaclass.name.toFirstLower»);
 						
-						nameForLookup.put(null, "input")
-						body = '''
-							«typeRef(Set)»<«Resource»> allResources = «Collections».emptySet();
-	
-							«typeRef(java.util.stream.Stream)»<«rule.source.metaclass.instanceTypeName»> input =
-								«Stream».of(«rule.source.metaclass.name.toFirstLower»);
-							
-							«FOR x : rule.lookups»
-								«x.generateCodeForRule(theClass)»
-							«ENDFOR»
-							
-							return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
-						'''
-					]
-				]
+						«FOR x : rule.lookups»
+							«x.generateCodeForRule(theClass)»
+						«ENDFOR»
+						
+						return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
+					'''
+				];
+				
+				method.annotations += annotationRef(Override)
+				theClass.members += method;
 			]);
 	}
 	
@@ -98,8 +109,10 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		return rule.lookups.last.getMetaclass
 	}
 	
-	def String getLookupMethodName(KampRule rule)
-		'''lookup«rule.name.toFirstUpper»From«rule.source.metaclass.name.toFirstUpper»'''
+	// this one is the entry point and must address the interface method which must be overridden
+	def String getMethodName() {
+		'''apply'''
+	}
 	
 	
 	/**

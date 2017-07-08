@@ -49,16 +49,15 @@ import org.osgi.framework.Bundle
 import org.osgi.framework.BundleContext
 import org.osgi.framework.FrameworkUtil
 import tools.vitruv.framework.util.bridges.EclipseBridge
+import org.eclipse.emf.ecore.EObject
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRule
+import java.util.ArrayList
+import java.util.Base64
+import java.util.Base64.Encoder
+import org.eclipse.jdt.core.IPackageFragmentRoot
+import java.util.Iterator
+import org.eclipse.core.resources.IResource
 
-// TODO write a beautiful documentation
-// TODO exception handling
-// TODO add custom action for context menu
-// TODO get calling project in facade
-// TODO allow only one karl file or make bundle names generic, i.e. bound to project name -> do not allow more than one karl file
-// TODO allow max. one karl file per project
-// TODO design service api
-// TODO understand marking process
-// TODO create one class per rule, remove plugin name and give class a meaningful name based on rule + _ + random hash
 class KampRuleLanguageGenerator implements IGenerator {
 	
 	@Inject
@@ -75,27 +74,36 @@ class KampRuleLanguageGenerator implements IGenerator {
         jvmModelGenerator.doGenerate(resource, fsa);
         
         var String name = "kamp";	// default name is "kamp-rules" otherwise we take the KAMP project's name whose .karl file triggered the build
-       	var URI uri;
-       	var JvmDeclaredType rootResource;
-       	var String jFileName;
+       	var List<URI> uris = newArrayList();
+       	var List decTypes = new ArrayList();
+       	var List<String> jFileNames = newArrayList();
        	
        	// get root element for name
        	for (obj : resource.contents) {
 			if(obj instanceof JvmDeclaredType) {
-				rootResource = obj;
+				decTypes.add(obj)
 			}
 		}
 		
-		if(rootResource == null) {
+		if(decTypes.size == 0) {
 			println("No JvmDeclaredType found. Quit.")
 			return;	// nothing to do here
 		}
        	
+       	// copy generated files to project folder
         if(fsa instanceof IFileSystemAccessExtension2) {
-        	jFileName = rootResource.qualifiedName.replace('.', '/') + '.java';
-        	uri = fsa.getURI(jFileName);
-        	println("Generated file is located under: " + uri);
-        	name = fsa.getURI("").path.replace("/resource/", "").replace("/src-gen", "");
+        	for(res : decTypes) {
+        		if(res instanceof JvmDeclaredType) {
+        			val cFileName = res.qualifiedName.replace('.', '/') + '.java';
+		        	jFileNames.add(cFileName);
+		        	val cUri = fsa.getURI(cFileName);
+		        	uris.add(cUri);
+		        	println("Generated file is located under: " + cUri);
+		        	
+		        	// FIXME this is actually a very unstable implementation. Look for a better way to find the project where the karl file is located
+		        	name = fsa.getURI("").path.replace("/resource/", "").replace("/src-gen", "");
+	        	}
+        	}
         } else {
         	throw new IllegalStateException("Wrong FileSystemAccess assigned by xText.");
         }
@@ -118,48 +126,57 @@ class KampRuleLanguageGenerator implements IGenerator {
 		}
         
         val causingProjectName = name;
-        val URI sourceFileUri = uri;
-        val String javaFileName = jFileName;
+        val URI[] sourceFileUris = uris;
+        val String[] javaFileNames = jFileNames;
         
 		val String mainName = "Insert new rules for " + causingProjectName;
 		var Job job = new Job(mainName) {
 			
 			override protected run(IProgressMonitor monitor) {
+				val boolean reload = root.getProject(causingProjectName + "-rules").exists;
 				val SubMonitor subMonitor = SubMonitor.convert(monitor, mainName, IProgressMonitor.UNKNOWN);
-				
-				monitor.subTask("Create source code project")
-			   	val boolean reload = root.getProject(causingProjectName + "-rules").exists;
-			   	var IProject project;
-			   	
-			   	if(reload) {
-			   		project = getProject(causingProjectName)
-			   	} else {
-			   		project = createProject(subMonitor.split(1), causingProjectName, packageUris);
-			   	}
-			   	moveRuleSourceFile(subMonitor.split(1), project, sourceFileUri, javaFileName);
-			   	buildProject(project, subMonitor.split(1));
-			   	
-			   	val Bundle dslBundle = getDslBundle;
-			   	if(dslBundle !== null) {
-			   		registerProjectBundle(project, dslBundle)
-			   	} else {
-			   		installAndStartProjectBundle(project)
-			   	}
-			   	
-			   	monitor.done
-			   
-			   Status.OK_STATUS;
+					
+				try {
+				   	var IProject project;
+				   	
+				   	if(reload) {
+				   		project = getProject(causingProjectName)
+				   		removeGeneratedFolderContents(project, subMonitor.split(1));
+				   	} else {
+				   		project = createProject(subMonitor.split(1), causingProjectName, packageUris);
+				   	}
+				   	
+				   	moveRuleSourceFiles(subMonitor.split(1), project, sourceFileUris, javaFileNames);
+				   	buildProject(project, subMonitor.split(1));
+				   	
+				   	val Bundle dslBundle = getDslBundle(causingProjectName);
+				   	if(dslBundle !== null) {
+				   		registerProjectBundle(project, dslBundle)
+				   	} else {
+				   		installAndStartProjectBundle(project)
+				   	}
+				   	
+				   	monitor.done
+				   
+				    Status.OK_STATUS
+				} catch(Exception e) {
+					// remove project if build was interrupted
+					if(!reload) {
+						removeProject(getProject(causingProjectName), subMonitor);
+					}
+					return new Status(Status.ERROR, BUNDLE_NAME, "Die Regeln konnten nicht eingefügt werden.", e);
+				}
 			}	
 		};
 		// job.setUser(true);
 		job.schedule();
 	}	
 	
-	static def getDslBundle() {
+	static def getDslBundle(String projectName) {
 		val BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageGenerator).getBundleContext();
 	   	var Bundle cBundle = null;
 	    for(Bundle bundle : bundleContext.getBundles()) {
-	    	if(bundle.getSymbolicName().equals(KampRuleLanguageGenerator.BUNDLE_NAME)) {
+	    	if(bundle.getSymbolicName() !== null && bundle.getSymbolicName().equals(KampRuleLanguageGenerator.getBundleNameForProjectName(projectName))) {
 	   	  		cBundle = bundle;
 	   	  	}
 	    }
@@ -215,18 +232,23 @@ class KampRuleLanguageGenerator implements IGenerator {
 		project.build(IncrementalProjectBuilder.AUTO_BUILD, monitor);
 	}
 	
-	def moveRuleSourceFile(IProgressMonitor monitor, IProject destinationProject, URI sourceFile, String jFileName) {		
-		val workspaceLocation = ResourcesPlugin.getWorkspace().getRoot().getLocation();
-		val sourcePath = new Path(workspaceLocation.toOSString + File.separator + sourceFile.toPlatformString(false));
-		val File srcFile = sourcePath.toFile
-		val IFile cFile = destinationProject.getFile(jFileName);
-		
-		// delete file if present
-		if(cFile.exists) {
-			cFile.delete(true, monitor);
+	def moveRuleSourceFiles(IProgressMonitor monitor, IProject destinationProject, URI[] sourceFiles, String[] jFileNames) {				
+		for(var int i = 0; i < sourceFiles.size; i++) {
+			val sourceFile = sourceFiles.get(i)
+			val jFileName = jFileNames.get(i)
+			val workspaceLocation = ResourcesPlugin.getWorkspace().getRoot().getLocation();
+			val sourcePath = new Path(workspaceLocation.toOSString + File.separator + sourceFile.toPlatformString(false));
+			val File srcFile = sourcePath.toFile
+			// TODO check if user removed folder??
+			val IFile cFile = destinationProject.getFolder("gen").getFile(jFileName);
+			
+			// delete file if present
+			if(cFile.exists) {
+				cFile.delete(true, monitor);
+			}
+			
+			cFile.create(new FileInputStream(srcFile), false, monitor)
 		}
-		
-		cFile.create(new FileInputStream(srcFile), false, monitor)
 	}	
 	
 	static def getProject(String causingProjectName) {
@@ -266,7 +288,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 			compilerProject.setDescription(description, progressMonitor);
 			
 			
-			val String projectName = BUNDLE_NAME;
+			val String projectName = getBundleNameForProjectName(name);
 			val Set<String> requiredBundles = newHashSet
 			val List<String> exportedPackages = newArrayList
 			val List<String> srcFolders = newArrayList
@@ -290,7 +312,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 			// for service interface reference
 			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
 			
-			srcFolders.add(".")
+			srcFolders.add("src");
+			srcFolders.add("gen");
 			
 			createManifest(projectName, requiredBundles, exportedPackages, progressMonitor, compilerProject);
 	        createBuildProps(progressMonitor, compilerProject, srcFolders);
@@ -320,23 +343,47 @@ class KampRuleLanguageGenerator implements IGenerator {
 				binFolder.create(false, true, null);
 			compilerJavaProject.setOutputLocation(binFolder.getFullPath(), progressMonitor);			
 						
-			// set source folder
-//			val IFolder sourceFolder = compilerProject.getFolder("src");
-//			sourceFolder.create(false, true, progressMonitor);
-
-			// is the root folder already a source folder?
-//			val IPackageFragmentRoot root = compilerJavaProject.getPackageFragmentRoot(sourceFolder);
-//			val IClasspathEntry[] oldEntries = compilerJavaProject.getRawClasspath();
-//			val IClasspathEntry[] newEntries = newArrayOfSize(oldEntries.length + 1);
-//			System.arraycopy(oldEntries, 0, newEntries, 0, oldEntries.length);
-//			newEntries.set(oldEntries.length, JavaCore.newSourceEntry(root.getPath(), null));
-//			compilerJavaProject.setRawClasspath(newEntries, progressMonitor);
+			// create gen and source folder
+			val IFolder sourceFolder = compilerProject.getFolder("src");
+			sourceFolder.create(false, true, progressMonitor);
+			
+			val IFolder genFolder = compilerProject.getFolder("gen");
+			genFolder.create(false, true, progressMonitor);
+			
+			// add src and generated as source folders
+			val IPackageFragmentRoot srcFolderFrag = compilerJavaProject.getPackageFragmentRoot(sourceFolder);
+			val IPackageFragmentRoot genFolderFrag = compilerJavaProject.getPackageFragmentRoot(genFolder);
+			var IClasspathEntry[] oldEntries = compilerJavaProject.getRawClasspath();
+			val ArrayList<IClasspathEntry> oldEntriesMod = new ArrayList<IClasspathEntry>(oldEntries);	// dirty!... make list changeable
+			
+			// is the root folder already a source folder? if yes, remove it
+			for(val Iterator<IClasspathEntry> it = oldEntriesMod.iterator; it.hasNext;) {
+				val entry = it.next
+				if(entry.contentKind == IPackageFragmentRoot.K_SOURCE && entry.entryKind == IClasspathEntry.CPE_SOURCE) {
+					// this is the source container entry for the project root
+					// remove this entry
+					it.remove
+					
+				}
+			}
+			
+			oldEntries = oldEntriesMod;
+			
+			val IClasspathEntry[] newEntries = newArrayOfSize(oldEntries.length + 2);
+			System.arraycopy(oldEntries, 0, newEntries, 0, oldEntries.length);
+			newEntries.set(oldEntries.length, JavaCore.newSourceEntry(srcFolderFrag.getPath(), null));
+			newEntries.set(oldEntries.length + 1, JavaCore.newSourceEntry(genFolderFrag.getPath(), null));
+			compilerJavaProject.setRawClasspath(newEntries, progressMonitor);
 
 			createActivator(compilerProject, progressMonitor)
 			createService(compilerProject, progressMonitor)
 		}
 		
 		return compilerProject
+	}
+	
+	public static def getBundleNameForProjectName(String name) {
+		return BUNDLE_NAME + "." + Base64.encoder.withoutPadding.encodeToString(name.bytes)
 	}
 	
 	def createBuildProps(IProgressMonitor progressMonitor, IProject project,
@@ -489,12 +536,22 @@ class KampRuleLanguageGenerator implements IGenerator {
 	def createActivator(IProject pluginProject, IProgressMonitor monitor) {
         val Bundle bundle = FrameworkUtil.getBundle(class);
 		val InputStream stream = bundle.getEntry("resources/Activator.java").openStream;
-		pluginProject.getFile("Activator.java").create(stream, false, monitor)
+		pluginProject.getFolder("src").getFile("Activator.java").create(stream, false, monitor)
     }
     
     def createService(IProject pluginProject, IProgressMonitor monitor) {
         val Bundle bundle = FrameworkUtil.getBundle(class);
 		val InputStream stream = bundle.getEntry("resources/RuleProviderImpl.java").openStream;
-		pluginProject.getFile("RuleProviderImpl.java").create(stream, false, monitor)
+		pluginProject.getFolder("src").getFile("RuleProviderImpl.java").create(stream, false, monitor)
     }
+    
+    def removeGeneratedFolderContents(IProject destinationProject, IProgressMonitor monitor) {
+		for(res : destinationProject.getFolder("gen").members) {
+			res.delete(true, monitor)
+		}
+	}
+	
+	def removeProject(IProject project, IProgressMonitor monitor) {
+		project.delete(true, true, monitor);
+	}
 }
