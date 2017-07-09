@@ -1,4 +1,4 @@
-package edu.kit.ipd.sdq.kamp.ruledsl.generator;
+package edu.kit.ipd.sdq.kamp.ruledsl.service;
 
 public interface IRuleProvider {
 	void applyAllRules();

@@ -10,6 +10,8 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
 
+import edu.kit.ipd.sdq.kamp.ruledsl.service.IRuleProvider;
+
 // this is intentionally a Java class NOT xtend because of import problems for plugins calling xtend files
 public class KampRuleLanguageFacade {
 	private static final BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageFacade.class).getBundleContext();

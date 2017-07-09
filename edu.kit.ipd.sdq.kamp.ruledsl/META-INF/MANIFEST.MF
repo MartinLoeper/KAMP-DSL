@@ -38,6 +38,7 @@ Export-Package: edu.kit.ipd.sdq.kamp.ruledsl,
  edu.kit.ipd.sdq.kamp.ruledsl.parser.antlr.internal,
  edu.kit.ipd.sdq.kamp.ruledsl.scoping,
  edu.kit.ipd.sdq.kamp.ruledsl.serializer,
+ edu.kit.ipd.sdq.kamp.ruledsl.service,
  edu.kit.ipd.sdq.kamp.ruledsl.services,
  edu.kit.ipd.sdq.kamp.ruledsl.validation
 Import-Package: org.apache.log4j

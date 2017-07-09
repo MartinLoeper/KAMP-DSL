@@ -8,7 +8,7 @@ import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.BackwardEReference
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.ForwardEReference
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRule
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.Lookup
-import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.RuleFile
+import edu.kit.ipd.sdq.kamp.ruledsl.service.IRule
 import edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil
 import java.util.Collections
 import java.util.Map
@@ -26,13 +26,6 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
-import org.eclipse.xtext.common.types.TypesFactory
-import org.eclipse.xtext.common.types.util.TypeReferences
-import org.eclipse.xtext.common.types.JvmAnnotationType
-import org.eclipse.xtext.common.types.JvmAnnotationReference
-import java.util.stream.Collector
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRuleProvider
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRule
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -92,7 +85,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					body = '''
 						«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
 
-						«typeRef(java.util.stream.Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
+						«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
 							«Stream».of(«rule.source.metaclass.name.toFirstLower»);
 						
 						«FOR x : rule.lookups»
