@@ -15,6 +15,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressService;
 
 import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageFacade;
+import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator;
 import edu.kit.ipd.sdq.kamp.util.FileAndFolderManagement;
 
 public class RegisterDslBundleAction implements IActionDelegate {
@@ -30,7 +31,7 @@ public class RegisterDslBundleAction implements IActionDelegate {
 	   try {
 			ps.busyCursorWhile(new IRunnableWithProgress() {
 		      public void run(IProgressMonitor monitor) {
-		  		KampRuleLanguageFacade.installIfNecessaryAndGetBundle(sourceProjectName, monitor);
+		  		KampRuleLanguageFacade.buildProjectAndReInstall(sourceProjectName, monitor);
 		      }
 		   });
 		} catch (InvocationTargetException e) {
@@ -56,7 +57,11 @@ public class RegisterDslBundleAction implements IActionDelegate {
 				String dslProjectName = this.selectedProject.getName();
 				sourceProjectName = dslProjectName.substring(0, dslProjectName.length() - 6);
 			} else if(KampRuleLanguageFacade.isKampProjectFolder(this.selectedProject)) {
-				action.setEnabled(true);
+				if(!KampRuleLanguageGenerator.getProject(this.selectedProject.getName()).exists()) {
+					action.setEnabled(false);
+				} else {
+					action.setEnabled(true);
+				}
 				sourceProjectName = this.selectedProject.getName();
 			} else {
 				action.setEnabled(false);	

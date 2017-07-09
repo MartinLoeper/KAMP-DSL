@@ -4,6 +4,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.SubMonitor;
+import org.eclipse.swt.internal.ole.win32.CAUUID;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
@@ -76,7 +77,7 @@ public class KampRuleLanguageFacade {
 	}
 
 	public static Bundle installIfNecessaryAndGetBundle(String sourceProjectName, IProgressMonitor mon) {
-		SubMonitor subMonitor = SubMonitor.convert(mon, "Installing Dsl Bundle", 2);
+		SubMonitor subMonitor = SubMonitor.convert(mon, "Installing Dsl Bundle", 6);
 		
 		subMonitor.split(1).beginTask("Search for bundle", 3);
 		Bundle dslBundle = null;
@@ -92,8 +93,7 @@ public class KampRuleLanguageFacade {
 	    if(dslBundle == null) {
 	    	subMonitor.split(1).beginTask("Install bundle at OSGi layer", 1);
 	    	System.out.println("Registering bundle manually...");
-	    	KampRuleLanguageGenerator.buildProject(KampRuleLanguageGenerator.getProject(sourceProjectName), null);
-	    	Bundle startedBundle = KampRuleLanguageGenerator.installAndStartProjectBundle(sourceProjectName, new NullProgressMonitor());
+	    	Bundle startedBundle = buildProjectAndInstall(sourceProjectName, subMonitor.split(3));
 	    	// wait for bundle to start
 	    	// TODO is busy waiting ok in KAMP here?
 	    	subMonitor.split(1).beginTask("Wait for bundle state ACTIVE", 1);
@@ -104,6 +104,20 @@ public class KampRuleLanguageFacade {
 	    subMonitor.done();
 	    
 	    return dslBundle;
+	}
+
+	// basically a convenience method
+	public static Bundle buildProjectAndInstall(String sourceProjectName, IProgressMonitor monitor) {
+		KampRuleLanguageGenerator.buildProject(KampRuleLanguageGenerator.getProject(sourceProjectName), null);
+    	
+		return KampRuleLanguageGenerator.installAndStartProjectBundle(sourceProjectName, monitor);
+	}
+	
+	// basically a convenience method
+	public static Bundle buildProjectAndReInstall(String sourceProjectName, IProgressMonitor monitor) {
+		KampRuleLanguageGenerator.buildProject(KampRuleLanguageGenerator.getProject(sourceProjectName), null);
+    	
+		return KampRuleLanguageGenerator.registerProjectBundle(KampRuleLanguageGenerator.getProject(sourceProjectName), KampRuleLanguageGenerator.getDslBundle(sourceProjectName), monitor);
 	}
 
 	public static KampLanguageService getService(String projectName) {
