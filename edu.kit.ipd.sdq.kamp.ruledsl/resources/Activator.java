@@ -1,9 +1,9 @@
 package gen;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRuleProvider;
+import edu.kit.ipd.sdq.kamp.ruledsl.service.IRuleProvider;
 import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator;
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRule;
+import edu.kit.ipd.sdq.kamp.ruledsl.service.IRule;
 import src.RuleProviderImpl;
 import gen.rule.*;
 

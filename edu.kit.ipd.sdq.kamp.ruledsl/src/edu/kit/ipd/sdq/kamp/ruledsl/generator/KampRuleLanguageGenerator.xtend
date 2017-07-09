@@ -361,6 +361,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
 			requiredBundles.add("org.eclipse.ui");
 			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
+			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.service")
 			
 			srcFolders.add("src");
 			srcFolders.add("gen");
@@ -513,9 +514,11 @@ class KampRuleLanguageGenerator implements IGenerator {
 		}
 		
 		// activate this plugin when one of its classes is loaded
+		
 		maniContent.append("Bundle-ActivationPolicy: lazy\r\n");
 		maniContent.append("Bundle-Activator: gen.Activator\r\n")
 		maniContent.append("Bundle-RequiredExecutionEnvironment: J2SE-1.5\r\n");
+		maniContent.append("Import-Package: edu.kit.ipd.sdq.kamp4bp.core\r\n")
 
 		var IFolder metaInf = project.getFolder("META-INF");
 		metaInf.create(false, true, progressMonitor);

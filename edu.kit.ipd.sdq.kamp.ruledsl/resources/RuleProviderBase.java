@@ -3,20 +3,21 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRule;
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRuleProvider;
+import edu.kit.ipd.sdq.kamp.ruledsl.service.IRule;
+import edu.kit.ipd.sdq.kamp.ruledsl.service.IRuleProvider;
+import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion;
 
 public abstract class RuleProviderBase implements IRuleProvider {
 	
 	private Collection<IRule> rules = new HashSet<>();
 	
 	@Override
-	public final void applyAllRules() {
+	public final void applyAllRules(BPArchitectureVersion version) {
 		System.out.println("Applying all custom dsl rules...");
 		
 		for(IRule cRule : this.rules) {
 			System.out.println("Running rule: " + cRule.getClass().getSimpleName());
-			cRule.apply();
+			cRule.apply(version);
 		}
 	}
 	

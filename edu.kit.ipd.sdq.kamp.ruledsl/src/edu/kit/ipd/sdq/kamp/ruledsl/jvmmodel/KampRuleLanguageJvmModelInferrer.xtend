@@ -26,6 +26,7 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
+import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -78,8 +79,9 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				nameForLookup = newHashMap
 				theClass.superTypes += typeRef(IRule)
 							
-				val method = rule.toMethod(getMethodName(), typeRef(Set, typeRef(rule.returnType.instanceTypeName))) [
-					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
+				val method = rule.toMethod(getMethodName(), typeRef("void")) [
+					//parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
+					parameters += rule.toParameter("version", typeRef(BPArchitectureVersion))
 					
 					nameForLookup.put(null, "input")
 					body = '''
