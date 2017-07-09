@@ -69,7 +69,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 	public static final String BUNDLE_NAME = "edu.kit.ipd.sdq.kamp.ruledsl.lookup.bundle";
 	
 	// if set true, project does not get delete if an error occurs
-	private static final boolean DEBUG = false;
+	private static final boolean DEBUG = true;
        
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		// delegate to Java generator in order to generate rule class files
@@ -98,7 +98,7 @@ class KampRuleLanguageGenerator implements IGenerator {
         		if(res instanceof JvmDeclaredType) {
         			val cFileName = res.simpleName.replace('.', '/') + '.java';        			
 		        	jFileNames.add(cFileName);
-		        	val cUri = fsa.getURI("gen/" + cFileName);
+		        	val cUri = fsa.getURI("gen/rule/" + cFileName);
 		        	uris.add(cUri);
 		        	println("Generated file is located under: " + cUri);
 		        	
@@ -280,8 +280,15 @@ class KampRuleLanguageGenerator implements IGenerator {
 			val workspaceLocation = ResourcesPlugin.getWorkspace().getRoot().getLocation();
 			val sourcePath = new Path(workspaceLocation.toOSString + File.separator + sourceFile.toPlatformString(false));
 			val File srcFile = sourcePath.toFile
-			// TODO check if user removed folder??
-			val IFile cFile = destinationProject.getFolder("gen").getFile(jFileName);
+			// TODO check if user removed gen folder??
+			val IFolder genFolder = destinationProject.getFolder("gen");
+			val IFolder ruleFolder = genFolder.getFolder("rule");
+			
+			if(!ruleFolder.exists) {
+				ruleFolder.create(true, false, monitor);
+			}
+			
+			val IFile cFile = ruleFolder.getFile(jFileName);
 			
 			// delete file if present
 			if(cFile.exists) {

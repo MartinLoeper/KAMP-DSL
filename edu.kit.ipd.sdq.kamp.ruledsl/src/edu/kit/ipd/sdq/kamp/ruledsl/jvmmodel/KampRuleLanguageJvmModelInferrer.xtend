@@ -77,7 +77,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	def dispatch void infer(KampRule rule, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {		
 		val className = rule.name.toFirstUpper + "Rule";
 		val clazz = rule.toClass(className);
-		clazz.packageName = "gen";
+		clazz.packageName = "gen.rule";
 		
 		acceptor.accept(clazz,
 			[ theClass |
