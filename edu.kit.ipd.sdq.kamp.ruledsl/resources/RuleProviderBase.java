@@ -31,7 +31,6 @@ public abstract class RuleProviderBase implements IRuleProvider {
 	public final <T extends IRule> void register(T rule) {	
 		// check if no rule with same class or superclass does exist
 		for(IRule cRule : this.rules) {
-			System.out.println(cRule.getClass() + "-" + rule.getClass() + ":" + cRule.getClass().isAssignableFrom(rule.getClass()));
 			if(cRule.getClass().isAssignableFrom(rule.getClass())) {
 				throw new IllegalStateException("There is already a supertype of the given class available, which is not allowed: " + cRule.getClass() + ". The rule will be omitted and registration does not continue.");
 			}
