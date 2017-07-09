@@ -20,10 +20,15 @@ Require-Bundle: edu.kit.ipd.sdq.kamp.ruledsl,
  org.eclipse.xtext.xbase.lib,
  org.eclipse.xtext.common.types.ui,
  org.eclipse.jdt.debug.ui,
- tools.vitruv.dsls.mirbase.ui;bundle-version="0.2.0"
+ tools.vitruv.dsls.mirbase.ui;bundle-version="0.2.0",
+ org.eclipse.core.commands,
+ org.eclipse.ui.workbench,
+ edu.kit.ipd.sdq.kamp,
+ org.eclipse.swt
 Import-Package: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Export-Package: edu.kit.ipd.sdq.kamp.ruledsl.ui.internal,
+Export-Package: edu.kit.ipd.sdq.kamp.ruledsl.ui,
  edu.kit.ipd.sdq.kamp.ruledsl.ui.contentassist,
+ edu.kit.ipd.sdq.kamp.ruledsl.ui.internal,
  edu.kit.ipd.sdq.kamp.ruledsl.ui.quickfix
 Bundle-Activator: edu.kit.ipd.sdq.kamp.ruledsl.ui.internal.RuledslActivator

@@ -566,4 +566,28 @@
 			type="text">
 		</fileTypes>
 	</extension>
+	
+	<extension point="org.eclipse.ui.popupMenus">
+		<objectContribution
+		adaptable="true"
+		id="edu.kit.ipd.sdq.kamp.ruledsl.objectContribution"
+		objectClass="org.eclipse.core.resources.IContainer">
+		
+		<action
+		class="edu.kit.ipd.sdq.kamp.ruledsl.ui.CreateKarlFileAction"
+		id="edu.kit.ipd.sdq.kamp.ruledsl.actionCreate"
+		label="Create Rule Definition File"
+		menubarPath="kamp"
+		enablesFor="1">
+		</action>
+		
+		<action
+		class="edu.kit.ipd.sdq.kamp.ruledsl.ui.RegisterDslBundleAction"
+		id="edu.kit.ipd.sdq.kamp.ruledsl.actionRegister"
+		label="Compile and Inject Rules"
+		menubarPath="kamp"
+		enablesFor="1">
+		</action>
+		</objectContribution>
+	</extension>
 </plugin>

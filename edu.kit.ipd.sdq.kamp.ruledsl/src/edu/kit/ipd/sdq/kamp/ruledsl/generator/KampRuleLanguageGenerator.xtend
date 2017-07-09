@@ -67,17 +67,10 @@ class KampRuleLanguageGenerator implements IGenerator {
     static val IWorkspaceRoot root = workspace.getRoot();
 	
 	public static final String BUNDLE_NAME = "edu.kit.ipd.sdq.kamp.ruledsl.lookup.bundle";
-        
-    public static class MutexRule implements ISchedulingRule {
-	      override def isConflicting(ISchedulingRule rule) {
-	         return rule == this;
-	      }
-	      
-	      override def contains(ISchedulingRule rule) {
-	         return rule == this;
-	      }
-  	}    
-        
+	
+	// if set true, project does not get delete if an error occurs
+	private static final boolean DEBUG = false;
+       
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		// delegate to Java generator in order to generate rule class files
 		jvmModelGenerator.doGenerate(resource, fsa)
@@ -150,7 +143,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 			
 			override protected run(IProgressMonitor monitor) {
 				val boolean reload = root.getProject(causingProjectName + "-rules").exists;
-				val SubMonitor subMonitor = SubMonitor.convert(monitor, mainName, 10);
+				val SubMonitor subMonitor = SubMonitor.convert(monitor, mainName, 12);
 					
 				try {
 				   	var IProject project;
@@ -159,13 +152,14 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   		project = getProject(causingProjectName)
 				   		removeGeneratedFolderContents(project, subMonitor.split(1));
 				   	} else {
+				   		subMonitor.split(1).beginTask("Create plugin project", 1);
 				   		project = createProject(subMonitor.split(1), causingProjectName, packageUris);
 				   		createService(project, subMonitor.split(1))
+				   		createPluginXml(project, subMonitor.split(1));
 				   	}
 				   					   	
 				   	createActivator(project, subMonitor.split(1), ruleFile)
 					createServiceBase(project, subMonitor.split(1));
-					createPluginXml(project, subMonitor.split(1));
 					createStartupRegistry(project, subMonitor.split(1));
 				   	
 				   	// the following line is not needed anymore as we have a custom FileSystemAccess right now
@@ -187,7 +181,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 				    Status.OK_STATUS
 				} catch(Exception e) {
 					// remove project if build was interrupted
-					if(!reload) {
+					if(!reload && !DEBUG) {
 						removeProject(getProject(causingProjectName), subMonitor);
 					}
 					return new Status(Status.ERROR, BUNDLE_NAME, "Die Regeln konnten nicht eingefügt werden.", e);
@@ -359,6 +353,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 			// for service interface reference
 			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
 			requiredBundles.add("org.eclipse.ui");
+			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
 			
 			srcFolders.add("src");
 			srcFolders.add("gen");
@@ -446,6 +441,20 @@ class KampRuleLanguageGenerator implements IGenerator {
 			+      "<startup class=\"gen.Startup\">\n"
 			+      "</startup>\n"
 			+   "</extension>\n"
+//			+ "<extension point=\"org.eclipse.ui.popupMenus\">\n"
+//      		+	"<objectContribution\n"
+//            +		"adaptable=\"true\"\n"
+//            + 		"id=\"edu.kit.ipd.sdq.kamp.ruledsl.objectContribution\"\n"
+//            +		"objectClass=\"org.eclipse.core.resources.IContainer\">\n"
+//         	+			"<action\n"
+//            +  				"class=\"edu.kit.ipd.sdq.kamp.ruledsl.ui.RegisterDslBundleAction\"\n"
+//            + 				"id=\"edu.kit.ipd.sdq.kamp.ruledsl.actionRegister\"\n"
+//            +				"label=\"Generate Rules Definition File\"\n"
+//            +				"menubarPath=\"kamp\"\n"
+//            +			    "enablesFor=\"1\">\n"
+//         	+			"</action>\n"
+//      		+		"</objectContribution>\n"
+//    		+	"</extension>\n"
 			+ "</plugin>";
 		
 		createFile("plugin.xml", project, template, progressMonitor);		
@@ -475,6 +484,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 		maniContent.append("Bundle-Name: " + projectName + "\n");
 		maniContent.append("Bundle-SymbolicName: " + projectName + "; singleton:=true\n");
 		maniContent.append("Bundle-Version: 1.0.0\n");
+		maniContent.append("Bundle-Vendor: Martin Loeper (KIT)\n");
+		// localization not needed, english is the way to go...
 		// maniContent.append("Bundle-Localization: plugin\n");
 		maniContent.append("Require-Bundle: ");
 		var int j = 0;

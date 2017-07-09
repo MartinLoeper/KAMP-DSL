@@ -16,6 +16,7 @@ public abstract class RuleProviderBase implements IRuleProvider {
 		System.out.println("Applying all custom dsl rules...");
 		
 		for(IRule cRule : this.rules) {
+			System.out.println("Running rule: " + cRule.getClass().getSimpleName());
 			cRule.apply();
 		}
 	}

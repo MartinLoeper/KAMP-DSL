@@ -4,12 +4,14 @@ import org.osgi.framework.BundleContext;
 import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRuleProvider;
 import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRule;
 import src.RuleProviderImpl;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 
-public class Activator implements BundleActivator {
+public class Activator extends AbstractUIPlugin implements BundleActivator {
 
 	private IRuleProvider ruleProvider;
 	
     public void start(BundleContext context) throws Exception {
+    	super.start(context);
         System.out.println("KAMP-RuleDSL bundle successfully activated.");
         
         ruleProvider = new RuleProviderImpl();
@@ -20,6 +22,7 @@ public class Activator implements BundleActivator {
     }
 
     public void stop(BundleContext context) throws Exception {
+    	super.stop(context);
     	 System.out.println("KAMP-RuleDSL bundle successfully shut down.");
     }
     

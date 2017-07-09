@@ -1,5 +1,6 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.generator;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.SubMonitor;
@@ -107,5 +108,14 @@ public class KampRuleLanguageFacade {
 
 	public static KampLanguageService getService(String projectName) {
 		return new KampLanguageService(projectName);
+	}
+	
+	// a modified folder at root indicates that the given project is a kamp project
+	public static boolean isKampProjectFolder(IProject project) {
+		return project.getFolder("modified").exists();
+	}
+
+	public static boolean isKampDslRuleProjectFolder(IProject project) {
+		return project.getName().endsWith("-rules");
 	}
 }
