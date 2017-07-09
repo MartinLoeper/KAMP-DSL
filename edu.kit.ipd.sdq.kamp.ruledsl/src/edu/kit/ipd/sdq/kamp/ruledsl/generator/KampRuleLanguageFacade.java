@@ -1,11 +1,12 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.generator;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.SubMonitor;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
-
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageFacade.KampLanguageService;
 
 // this is intentionally a Java class NOT xtend because of import problems for plugins calling xtend files
 public class KampRuleLanguageFacade {
@@ -19,6 +20,10 @@ public class KampRuleLanguageFacade {
 		public KampLanguageService(String projectName) {
 			this.projectName = projectName;
 			this.serviceReference = getServiceReference(projectName);
+			
+			if(this.serviceReference == null) {
+				throw new IllegalStateException("ServiceReference not found! The bundle for " + projectName + " is probably not registered.");
+			}
 			
 			this.service = bundleContext.getService(serviceReference);
 			
@@ -49,27 +54,7 @@ public class KampRuleLanguageFacade {
 	}
 	
 	public static ServiceReference<IRuleProvider> getServiceReference(String sourceProjectName) {
-    	BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageGenerator.class).getBundleContext();
-
-		Bundle dslBundle = null;
-	    /* lookup the kamp dsl bundle */
-	    for(Bundle bundle : bundleContext.getBundles()) {
-	    	if(bundle.getSymbolicName().equals(KampRuleLanguageGenerator.getBundleNameForProjectName(sourceProjectName))) {
-	   	  		dslBundle = bundle;
-	   	  	}
-	    }
-	   
-	    /* if the bundle is not already loaded, try to load in manually */
-	    
-	    if(dslBundle == null) {
-	    	System.out.println("Registering bundle manually...");
-	    	Bundle startedBundle = edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator.installAndStartProjectBundle(sourceProjectName);
-	    	// wait for bundle to start
-	    	// TODO is busy waiting ok in KAMP here?
-	    	while(startedBundle != null && startedBundle.getState() != Bundle.ACTIVE) {};
-	    	
-	    	dslBundle = startedBundle;
-	    }
+    	Bundle dslBundle = installIfNecessaryAndGetBundle(sourceProjectName, new NullProgressMonitor());
 	    
 	    if(dslBundle != null) {
 	 		 System.out.println("Found bundle with additional propagation rules. State: " + dslBundle.getState());
@@ -87,6 +72,37 @@ public class KampRuleLanguageFacade {
 	    }
 	    
 	    return null;
+	}
+
+	public static Bundle installIfNecessaryAndGetBundle(String sourceProjectName, IProgressMonitor mon) {
+		SubMonitor subMonitor = SubMonitor.convert(mon, "Installing Dsl Bundle", 2);
+		
+		subMonitor.split(1).beginTask("Search for bundle", 3);
+		Bundle dslBundle = null;
+	    /* lookup the kamp dsl bundle */
+	    for(Bundle bundle : bundleContext.getBundles()) {
+	    	if(bundle.getSymbolicName() != null && bundle.getSymbolicName().equals(KampRuleLanguageGenerator.getBundleNameForProjectName(sourceProjectName))) {
+	   	  		dslBundle = bundle;
+	   	  	}
+	    }
+	   
+	    /* if the bundle is not already loaded, try to load in manually */
+	    
+	    if(dslBundle == null) {
+	    	subMonitor.split(1).beginTask("Install bundle at OSGi layer", 1);
+	    	System.out.println("Registering bundle manually...");
+	    	KampRuleLanguageGenerator.buildProject(KampRuleLanguageGenerator.getProject(sourceProjectName), null);
+	    	Bundle startedBundle = KampRuleLanguageGenerator.installAndStartProjectBundle(sourceProjectName, new NullProgressMonitor());
+	    	// wait for bundle to start
+	    	// TODO is busy waiting ok in KAMP here?
+	    	subMonitor.split(1).beginTask("Wait for bundle state ACTIVE", 1);
+	    	while(startedBundle != null && startedBundle.getState() != Bundle.ACTIVE) {};
+	    	
+	    	dslBundle = startedBundle;
+	    }
+	    subMonitor.done();
+	    
+	    return dslBundle;
 	}
 
 	public static KampLanguageService getService(String projectName) {

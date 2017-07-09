@@ -3,7 +3,6 @@
  */
 package edu.kit.ipd.sdq.kamp.ruledsl
 
-
 /**
  * Initialization support for running Xtext languages without Equinox extension registry.
  */

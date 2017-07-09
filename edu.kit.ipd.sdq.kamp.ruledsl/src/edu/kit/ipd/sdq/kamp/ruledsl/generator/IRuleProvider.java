@@ -1,5 +1,8 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.generator;
 
 public interface IRuleProvider {
-	String getRule();
+	void applyAllRules();
+	<T extends IRule> void register(T rule);
+	void onRegistryReady();
+	boolean areStandardRulesEnabled();
 }

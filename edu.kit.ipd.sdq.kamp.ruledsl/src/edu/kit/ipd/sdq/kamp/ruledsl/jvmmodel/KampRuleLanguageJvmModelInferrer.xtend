@@ -32,6 +32,7 @@ import org.eclipse.xtext.common.types.JvmAnnotationType
 import org.eclipse.xtext.common.types.JvmAnnotationReference
 import java.util.stream.Collector
 import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRuleProvider
+import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRule
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -75,11 +76,14 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 */
 	def dispatch void infer(KampRule rule, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {		
 		val className = rule.name.toFirstUpper + "Rule";
-		acceptor.accept(rule.toClass(className),
+		val clazz = rule.toClass(className);
+		clazz.packageName = "gen";
+		
+		acceptor.accept(clazz,
 			[ theClass |
 				// theClass.extendedInterfaces += theClass.typeRef(typeRef(String))
 				nameForLookup = newHashMap
-				theClass.superTypes += typeRef(IRuleProvider)
+				theClass.superTypes += typeRef(IRule)
 							
 				val method = rule.toMethod(getMethodName(), typeRef(Set, typeRef(rule.returnType.instanceTypeName))) [
 					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
@@ -99,8 +103,11 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					'''
 				];
 				
-				method.annotations += annotationRef(Override)
+				//method.annotations += annotationRef(Override)
 				theClass.members += method;
+				val dummy = rule.toMethod("apply", typeRef("void"), []);
+				dummy.body = ''''''
+				theClass.members += dummy
 			]);
 	}
 	

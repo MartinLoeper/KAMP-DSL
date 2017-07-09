@@ -1,7 +1,9 @@
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.IRuleProvider;
+package src;
+import gen.RuleProviderBase;
 
-class RuleProviderImpl implements IRuleProvider {
-	public String getRule() {
-		return "My Rule!";
+public class RuleProviderImpl extends RuleProviderBase {
+	@Override
+	public void onRegistryReady() {
+	 
 	}
 }
