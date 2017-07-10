@@ -1,9 +1,10 @@
 package gen;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import edu.kit.ipd.sdq.kamp.ruledsl.service.IRuleProvider;
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator;
-import edu.kit.ipd.sdq.kamp.ruledsl.service.IRule;
+
+import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil;
+import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRule;
+import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRuleProvider;
 import src.RuleProviderImpl;
 import gen.rule.*;
 
@@ -73,11 +74,11 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
         StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
 
         for (StackTraceElement stackTrace: stackTraces) {
-            Status status = new Status(IStatus.ERROR, KampRuleLanguageGenerator.BUNDLE_NAME + ".xxxxxxxx", stackTrace.toString());
+            Status status = new Status(IStatus.ERROR, KampRuleLanguageUtil.BUNDLE_NAME + ".xxxxxxxx", stackTrace.toString());
             childStatuses.add(status);
         }
 
-        MultiStatus ms = new MultiStatus(KampRuleLanguageGenerator.BUNDLE_NAME + ".xxxxxxxx",
+        MultiStatus ms = new MultiStatus(KampRuleLanguageUtil.BUNDLE_NAME + ".xxxxxxxx",
                 IStatus.ERROR, childStatuses.toArray(new Status[] {}), t.toString(), t);
         
         return ms;

@@ -130,9 +130,9 @@ class KampRuleLanguageGenerator implements IGenerator {
 		        return RULE_JOB_FAMILY.equals(family);
 		    }
 			
-			override protected run(IProgressMonitor monitor) {
+			override protected run(IProgressMonitor mon) {
 				val boolean reload = root.getProject(causingProjectName + "-rules").exists;
-				val SubMonitor subMonitor = SubMonitor.convert(monitor, mainName, 12);
+				val SubMonitor subMonitor = SubMonitor.convert(mon, mainName, 12);
 					
 				try {
 				   	var IProject project;
@@ -156,6 +156,10 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   	moveRuleSourceFiles(subMonitor.split(1), project, sourceFileUris, javaFileNames);
 				   	buildProject(project, subMonitor.split(1));
 				   	project.refreshLocal(IProject.DEPTH_INFINITE, subMonitor.split(1))
+				  
+				   	if(!reload) {
+				  	 	setupProject(subMonitor.split(3), project)
+				   	}
 				   	
 				   	val Bundle dslBundle = getDslBundle(causingProjectName);
 				   	if(dslBundle !== null) {
@@ -166,7 +170,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   	
 				   	println("DONE")
 				   	 
-				   	monitor.done
+				   	mon.done
 				   
 				    Status.OK_STATUS
 				} catch(Exception e) {
@@ -222,7 +226,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 	}	
 	
 	def createManifest(String projectName, IProject project, Set<String> packageUris,  IProgressMonitor monitor) {
-		val Set<String> requiredBundles = newHashSet
+			val Set<String> requiredBundles = newHashSet
+			val Set<String> importedPackages = newHashSet
 			val List<String> exportedPackages = newArrayList
 
 			// export the default bundle
@@ -230,112 +235,145 @@ class KampRuleLanguageGenerator implements IGenerator {
 			
 			// search for imported models
 			var registry = EPackage.Registry.INSTANCE;
-			for (String key : new HashSet<String>(registry.keySet())) {
-			    var ePackage = registry.getEPackage(key);
-			    for(packageUri : packageUris) {
-				    if(ePackage.nsURI.equals(packageUri)) {
-				    	// taken from MirBaseQuickFixProvider
-				    	val String contributorName = EclipseBridge.getNameOfContributorOfExtension("org.eclipse.emf.ecore.generated_package", "uri", ePackage.nsURI)
-				   		requiredBundles.add(contributorName)
+			for (String nsUri : new HashSet<String>(registry.keySet())) {
+//				try {
+//				    var ePackage = registry.getEPackage(key);
+				    for(packageUri : packageUris) {
+					    if(nsUri.equals(packageUri)) {
+//					    	// taken from MirBaseQuickFixProvider
+					    	val String contributorName = EclipseBridge.getNameOfContributorOfExtension("org.eclipse.emf.ecore.generated_package", "uri", nsUri)
+					   		if(contributorName !== null) 
+					   			requiredBundles.add(contributorName)
+					    }
 				    }
-			    }
+//				} catch(NoClassDefFoundError e) { } catch(ExceptionInInitializerError e2) {};
 			}
 			
-			// for service interface reference
-			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
 			requiredBundles.add("org.eclipse.ui");
+			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
 			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
-			requiredBundles.add("edu.kit.ipd.sdq.kamp.model.modificationmarks")
-			requiredBundles.add("edu.kit.ipd.sdq.kamp4is")
-			requiredBundles.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
-			requiredBundles.add("edu.kit.ipd.sdq.kamp")
+			//requiredBundles.add("edu.kit.ipd.sdq.kamp.model.modificationmarks")
+			//requiredBundles.add("edu.kit.ipd.sdq.kamp4is")
+			//requiredBundles.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
+			//requiredBundles.add("edu.kit.ipd.sdq.kamp")
+			//requiredBundles.add("edu.kit.ipd.sdq.kamp4bp")
 			
-			createManifest(projectName, requiredBundles, exportedPackages, monitor, project);
+			// add the kamp packages here because we should resolve the bin folder dependencies via import not require
+			importedPackages.add("edu.kit.ipd.sdq.kamp4bp.ruledsl.support");
+			importedPackages.add("edu.kit.ipd.sdq.kamp.ruledsl.support");
+			importedPackages.add("edu.kit.ipd.sdq.kamp4bp.core");	
+			importedPackages.add("edu.kit.ipd.sdq.kamp4is.core")
+			importedPackages.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
+			
+			createManifest(projectName, requiredBundles, importedPackages, exportedPackages, monitor, project);
 	}
 	
-	// see: https://sdqweb.ipd.kit.edu/wiki/JDT_Tutorial:_Creating_Eclipse_Java_Projects_Programmatically
 	def createProject(IProgressMonitor progressMonitor, String name) {
 		var IProject compilerProject = getProject(name)
 				
-		if (!compilerProject.exists) {
-			// if does not exist, create it
-			compilerProject.create(progressMonitor)
-			compilerProject.open(progressMonitor)	
+		// if does not exist, create it
+		compilerProject.create(progressMonitor)
+		compilerProject.open(progressMonitor)	
 
-			// add Java nature
-			val IProjectDescription description = compilerProject.getDescription();
-			val List<String> newNatures = newArrayList
-			newNatures.add(JavaCore.NATURE_ID)
-			newNatures.add(IBundleProjectDescription.PLUGIN_NATURE)
-			description.setNatureIds(newNatures);
-			compilerProject.setDescription(description, progressMonitor);
+		// create the folder
+		val IFolder sourceFolder = compilerProject.getFolder("src");
+		sourceFolder.create(false, true, progressMonitor);
+		
+		val IFolder genFolder = compilerProject.getFolder("gen");
+		genFolder.create(false, true, progressMonitor);
+		
+		val IFolder metaFolder = compilerProject.getFolder("META-INF");
+		if(!metaFolder.exists)
+			metaFolder.create(false, true, progressMonitor);
 			
-			// init PDE stuffe / set up Eclipse Plugin Project nature
-			// source: http://sodecon.blogspot.de/2009/09/create-elicpse-plug-in-project.html
-			
-			val ICommand java = description.newCommand();
-			java.setBuilderName(JavaCore.BUILDER_ID);
-			
-			val ICommand manifest = description.newCommand();
-			manifest.setBuilderName("org.eclipse.pde.ManifestBuilder");
-
-			val ICommand schema = description.newCommand();
-            schema.setBuilderName("org.eclipse.pde.SchemaBuilder");
-            
-            description.buildSpec = #[java, manifest, schema]
-			compilerProject.setDescription(description, progressMonitor);
-			
-			val List<String> srcFolders = newArrayList
-			
-			srcFolders.add("src");
-			srcFolders.add("gen");
-			
-			createBuildProps(progressMonitor, compilerProject, srcFolders);
-			
-			val IJavaProject compilerJavaProject = JavaCore.create(compilerProject)
+		val IFolder binFolder = compilerProject.getFolder("bin");
+		if(!binFolder.exists)
+			binFolder.create(false, true, null);
+		
+		return compilerProject
+	}
 	
-			// add JRE to classpath
-			var Set<IClasspathEntry> entries = new HashSet<IClasspathEntry>();
-			entries.addAll(Arrays.asList(compilerJavaProject.getRawClasspath()));
-			
+	// see: https://sdqweb.ipd.kit.edu/wiki/JDT_Tutorial:_Creating_Eclipse_Java_Projects_Programmatically
+	def setupProject(IProgressMonitor progressMonitor, IProject compilerProject) {		
+		compilerProject.open(progressMonitor)	
+
+		// add Java nature
+		val IProjectDescription description = compilerProject.getDescription();
+		val List<String> newNatures = newArrayList
+		newNatures.add(JavaCore.NATURE_ID)
+		newNatures.add(IBundleProjectDescription.PLUGIN_NATURE)
+		description.setNatureIds(newNatures);
+		compilerProject.setDescription(description, progressMonitor);
+		
+		// init PDE stuffe / set up Eclipse Plugin Project nature
+		// source: http://sodecon.blogspot.de/2009/09/create-elicpse-plug-in-project.html
+		
+		val ICommand java = description.newCommand();
+		java.setBuilderName(JavaCore.BUILDER_ID);
+		
+		val ICommand manifest = description.newCommand();
+		manifest.setBuilderName("org.eclipse.pde.ManifestBuilder");
+
+		val ICommand schema = description.newCommand();
+        schema.setBuilderName("org.eclipse.pde.SchemaBuilder");
+        
+        val ICommand customSourceBuilder = description.newCommand;
+        customSourceBuilder.builderName = "edu.kit.ipd.sdq.kamp.ruledsl.ui.sourceBuilder"
+        
+        description.buildSpec = #[java, manifest, schema, customSourceBuilder]
+		compilerProject.setDescription(description, progressMonitor);
+		
+		val List<String> srcFolders = newArrayList
+		
+		srcFolders.add("src");
+		srcFolders.add("gen");
+		
+		createBuildProps(progressMonitor, compilerProject, srcFolders);
+		
+		val IJavaProject compilerJavaProject = JavaCore.create(compilerProject)
+
+		// add JRE to classpath
+		var Set<IClasspathEntry> entries = new HashSet<IClasspathEntry>();
+		entries.addAll(Arrays.asList(compilerJavaProject.getRawClasspath()));
+		
 //			entries.addAll(Arrays.asList(NewJavaProjectPreferencePage.getDefaultJRELibrary()));
-			entries.add(JavaCore.newContainerEntry(new Path("org.eclipse.pde.core.requiredPlugins")));
-			
-			val IVMInstall vmInstall= JavaRuntime.getDefaultVMInstall();
-			val LibraryLocation[] locations= JavaRuntime.getLibraryLocations(vmInstall);
-			
-			for (LibraryLocation element : locations) {
-				entries.add(JavaCore.newLibraryEntry(element.getSystemLibraryPath(), null, null));
-			}
-			
-			compilerJavaProject.setRawClasspath(entries, progressMonitor);
-						
-			// set bin folder
-			val IFolder binFolder = compilerProject.getFolder("bin");
-			if(!binFolder.exists)
-				binFolder.create(false, true, null);
-			compilerJavaProject.setOutputLocation(binFolder.getFullPath(), progressMonitor);			
-						
-			// create gen and source folder and META-INF
-			val IFolder sourceFolder = compilerProject.getFolder("src");
-			sourceFolder.create(false, true, progressMonitor);
-			
-			val IFolder genFolder = compilerProject.getFolder("gen");
-			genFolder.create(false, true, progressMonitor);
-			
-			val IFolder metaFolder = compilerProject.getFolder("META-INF");
-			if(!metaFolder.exists)
-				metaFolder.create(false, true, progressMonitor);
-			
-			// add src and generated as source folders
+		entries.add(JavaCore.newContainerEntry(new Path("org.eclipse.pde.core.requiredPlugins")));
+		
+		val IVMInstall vmInstall= JavaRuntime.getDefaultVMInstall();
+		val LibraryLocation[] locations= JavaRuntime.getLibraryLocations(vmInstall);
+		
+		for (LibraryLocation element : locations) {
+			entries.add(JavaCore.newLibraryEntry(element.getSystemLibraryPath(), null, null));
+		}
+		
+		compilerJavaProject.setRawClasspath(entries, progressMonitor);
+					
+		// set bin folder
+		val IFolder binFolder = compilerProject.getFolder("bin");
+		if(!binFolder.exists)
+			binFolder.create(false, true, null);
+		compilerJavaProject.setOutputLocation(binFolder.getFullPath(), progressMonitor);			
+					
+		// create gen and source folder and META-INF
+		val IFolder sourceFolder = compilerProject.getFolder("src");
+		// sourceFolder.create(false, true, progressMonitor);
+		
+		val IFolder genFolder = compilerProject.getFolder("gen");
+		//genFolder.create(false, true, progressMonitor);
+		
+		val IFolder metaFolder = compilerProject.getFolder("META-INF");
+//		if(!metaFolder.exists)
+//			metaFolder.create(false, true, progressMonitor);
+		
+		// add src and generated as source folders
 //			val IPackageFragmentRoot srcFolderFrag = compilerJavaProject.getPackageFragmentRoot(sourceFolder);
 //			val IPackageFragmentRoot genFolderFrag = compilerJavaProject.getPackageFragmentRoot(genFolder);
 //			val IPackageFragmentRoot metaFolderFrag = compilerJavaProject.getPackageFragmentRoot(metaFolder);
 //			
-			var IClasspathEntry[] oldEntries = compilerJavaProject.getRawClasspath();
-			val ArrayList<IClasspathEntry> oldEntriesMod = new ArrayList<IClasspathEntry>(oldEntries);	// dirty!... make list changeable
-			
-			// is the root folder already a source folder? if yes, remove it
+		var IClasspathEntry[] oldEntries = compilerJavaProject.getRawClasspath();
+		val ArrayList<IClasspathEntry> oldEntriesMod = new ArrayList<IClasspathEntry>(oldEntries);	// dirty!... make list changeable
+		
+		// is the root folder already a source folder? if yes, remove it
 //			for(val Iterator<IClasspathEntry> it = oldEntriesMod.iterator; it.hasNext;) {
 //				val entry = it.next
 //				if(entry.contentKind == IPackageFragmentRoot.K_SOURCE && entry.entryKind == IClasspathEntry.CPE_SOURCE) {
@@ -345,17 +383,16 @@ class KampRuleLanguageGenerator implements IGenerator {
 //					
 //				}
 //			}
-			
-			oldEntries = oldEntriesMod;
-			
-			val IClasspathEntry[] newEntries = newArrayOfSize(oldEntries.length + 3);
-			System.arraycopy(oldEntries, 0, newEntries, 0, oldEntries.length);
+		
+		oldEntries = oldEntriesMod;
+		
+		val IClasspathEntry[] newEntries = newArrayOfSize(oldEntries.length + 3);
+		System.arraycopy(oldEntries, 0, newEntries, 0, oldEntries.length);
 //			newEntries.set(oldEntries.length, JavaCore.newSourceEntry(srcFolderFrag.getPath(), null));
 //			newEntries.set(oldEntries.length + 1, JavaCore.newSourceEntry(genFolderFrag.getPath(), null));
 //			newEntries.set(oldEntries.length + 2, JavaCore.newSourceEntry(metaFolderFrag.getPath(), null));
 //			compilerJavaProject.setRawClasspath(newEntries, progressMonitor);
-		}
-		
+	
 		return compilerProject
 	}
 	
@@ -367,6 +404,17 @@ class KampRuleLanguageGenerator implements IGenerator {
 			+      "<startup class=\"gen.Startup\">\n"
 			+      "</startup>\n"
 			+   "</extension>\n"
+//			+ "<extension\n"
+//       		+		"id=\"edu.kit.ipd.sdq.kamp.ruledsl.ui.sourceBuilder\"\n"
+//      		+	 	"name=\"Kamp Rule Source Code Builder\"\n"
+//       		+		"point=\"org.eclipse.core.resources.builders\">\n"
+//      		+			"<builder\n"
+//            +				"callOnEmptyDelta=\"false\"\n"
+//            +				"hasNature=\"false\"\n"
+//            +				"isConfigurable=\"false\">\n"
+//         	+				"<run class=\"edu.kit.ipd.sdq.kamp.ruledsl.ui.DslJavaSourceBuilder\"></run>\n"
+//      		+			"</builder>\n"
+//   			+	"</extension>\n"
 //			+ "<extension point=\"org.eclipse.ui.popupMenus\">\n"
 //      		+	"<objectContribution\n"
 //            +		"adaptable=\"true\"\n"
@@ -402,7 +450,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		createFile("build.properties", project, bpContent.toString(), progressMonitor);
 	}
 
-	def createManifest(String projectName, Set<String> requiredBundles,
+	def createManifest(String projectName, Set<String> requiredBundles,  Set<String> importedPackages,
 			List<String> exportedPackages, IProgressMonitor progressMonitor, IProject project)
 	throws CoreException {
 		val StringBuilder maniContent = new StringBuilder("Manifest-Version: 1.0\n");
@@ -413,7 +461,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 		maniContent.append("Bundle-Vendor: Martin Loeper (KIT)\n");
 		// localization not needed, english is the way to go...
 		// maniContent.append("Bundle-Localization: plugin\n");
-		maniContent.append("Require-Bundle: ");
+		if(requiredBundles.size > 0)
+			maniContent.append("Require-Bundle: ");
 		var int j = 0;
 		for (String entry : requiredBundles) {
 			if(j != 0) {
@@ -436,8 +485,20 @@ class KampRuleLanguageGenerator implements IGenerator {
 		maniContent.append("Bundle-ActivationPolicy: lazy\r\n");
 		maniContent.append("Bundle-Activator: gen.Activator\r\n")
 		maniContent.append("Bundle-RequiredExecutionEnvironment: J2SE-1.5\r\n");
-		maniContent.append("Import-Package: edu.kit.ipd.sdq.kamp4bp.core\r\n")
-
+		
+		// add package imports
+		if(importedPackages.size > 0)
+			maniContent.append("Import-Package: ");
+		var int k = 0;
+		for (String entry : importedPackages) {
+			if(k != 0) {
+				maniContent.append(",");
+			}
+			maniContent.append(entry);
+			k++;
+		}
+		maniContent.append("\n");
+		
 		var IFolder metaInf = project.getFolder("META-INF");
 		if(!metaInf.exists) {
 			metaInf.create(false, true, progressMonitor);

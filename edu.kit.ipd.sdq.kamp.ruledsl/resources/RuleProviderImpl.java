@@ -3,7 +3,7 @@ package src;
 import gen.RuleProviderBase;
 import javax.swing.JOptionPane;
 
-import edu.kit.ipd.sdq.kamp.ruledsl.service.IRule;
+import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRule;
 
 public class RuleProviderImpl extends RuleProviderBase {
 	@Override

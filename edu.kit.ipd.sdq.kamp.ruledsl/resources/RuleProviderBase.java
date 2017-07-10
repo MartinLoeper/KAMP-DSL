@@ -9,12 +9,13 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 
-import edu.kit.ipd.sdq.kamp.ruledsl.service.IRule;
-import edu.kit.ipd.sdq.kamp.ruledsl.service.IRuleProvider;
 import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion;
+import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRule;
+import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRuleProvider;
 import edu.kit.ipd.sdq.kamp4is.core.AbstractISChangePropagationAnalysis;
 import edu.kit.ipd.sdq.kamp4is.core.ISArchitectureVersion;
 import edu.kit.ipd.sdq.kamp4is.model.modificationmarks.ISChangePropagationDueToDataDependencies;
+
 public abstract class RuleProviderBase implements IRuleProvider {
 	
 	private Collection<IRule> rules = new HashSet<>();
@@ -29,6 +30,7 @@ public abstract class RuleProviderBase implements IRuleProvider {
 			try {
 				cRule.apply(version, changePropagationAnalysis);
 			} catch(Exception e) {
+				e.printStackTrace();
 				Display.getDefault().asyncExec(new Runnable() {
 				    public void run() {
 				    	MultiStatus status = Activator.createMultiStatus(e.getLocalizedMessage(), e);

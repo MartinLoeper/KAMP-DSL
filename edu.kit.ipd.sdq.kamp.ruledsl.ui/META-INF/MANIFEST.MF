@@ -25,7 +25,9 @@ Require-Bundle: edu.kit.ipd.sdq.kamp.ruledsl,
  org.eclipse.core.commands,
  org.eclipse.ui.workbench,
  edu.kit.ipd.sdq.kamp,
- org.eclipse.swt
+ org.eclipse.swt,
+ org.eclipse.core.runtime,
+ org.eclipse.core.resources
 Import-Package: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: edu.kit.ipd.sdq.kamp.ruledsl.ui,
