@@ -13,6 +13,7 @@ The old SVN Repository URL is: https://svnserver.informatik.kit.edu/i43/svn/code
 - Import [SDQ Commons](https://github.com/kit-sdq/SDQ-Commons) into Workbench
 - Import [Vitruv](https://github.com/vitruv-tools/Vitruv) into Workbench
 - Import [Palladio](https://svnserver.informatik.kit.edu/i43/svn/code/Palladio/Core/trunk/PCM/) into Workbench as SVN Project (optional) - this will enable you access to the pcm.ecore model
+- Download and Install as Eclipse Extension: [GEF](https://projects.eclipse.org/projects/tools.gef/downloads) (optional) - this is necessary if you included the Palladio sources in the step above and want to create a graphical model
 - Download and Install as Eclipse Extension: [Xtext](https://eclipse.org/Xtext/download.html)
 - Download and Install as Eclipse Extension: [Xtend](https://eclipse.org/Xtext/download.html)
 - Create working sets for each imported repository
