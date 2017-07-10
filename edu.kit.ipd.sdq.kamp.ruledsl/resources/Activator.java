@@ -68,7 +68,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
     	}
     }
 
-    private static MultiStatus createMultiStatus(String msg, Throwable t) {
+    static MultiStatus createMultiStatus(String msg, Throwable t) {
         List<Status> childStatuses = new ArrayList<>();
         StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
 

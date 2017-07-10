@@ -1,14 +1,19 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.generator;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.swt.internal.ole.win32.CAUUID;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
+
+import static edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageUtil.*;
 
 import edu.kit.ipd.sdq.kamp.ruledsl.service.IRuleProvider;
 
@@ -21,7 +26,7 @@ public class KampRuleLanguageFacade {
 		private final String projectName;
 		private final IRuleProvider service;
 
-		public KampLanguageService(String projectName) {
+		public KampLanguageService(String projectName) throws BundleException, CoreException {
 			this.projectName = projectName;
 			this.serviceReference = getServiceReference(projectName);
 			
@@ -53,11 +58,11 @@ public class KampRuleLanguageFacade {
 	}
 	
 	public static void unregisterService(ServiceReference<IRuleProvider> serviceReference) {	
-		BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageGenerator.class).getBundleContext();
+		BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageFacade.class).getBundleContext();
 	 	bundleContext.ungetService(serviceReference);
 	}
 	
-	public static ServiceReference<IRuleProvider> getServiceReference(String sourceProjectName) {
+	public static ServiceReference<IRuleProvider> getServiceReference(String sourceProjectName) throws BundleException, CoreException {
     	Bundle dslBundle = installIfNecessaryAndGetBundle(sourceProjectName, new NullProgressMonitor());
 	    
 	    if(dslBundle != null) {
@@ -78,14 +83,14 @@ public class KampRuleLanguageFacade {
 	    return null;
 	}
 
-	public static Bundle installIfNecessaryAndGetBundle(String sourceProjectName, IProgressMonitor mon) {
+	public static Bundle installIfNecessaryAndGetBundle(String sourceProjectName, IProgressMonitor mon) throws BundleException, CoreException {
 		SubMonitor subMonitor = SubMonitor.convert(mon, "Installing Dsl Bundle", 6);
 		
 		subMonitor.split(1).beginTask("Search for bundle", 3);
 		Bundle dslBundle = null;
 	    /* lookup the kamp dsl bundle */
 	    for(Bundle bundle : bundleContext.getBundles()) {
-	    	if(bundle.getSymbolicName() != null && bundle.getSymbolicName().equals(KampRuleLanguageGenerator.getBundleNameForProjectName(sourceProjectName))) {
+	    	if(bundle.getSymbolicName() != null && bundle.getSymbolicName().equals(getBundleNameForProjectName(sourceProjectName))) {
 	   	  		dslBundle = bundle;
 	   	  	}
 	    }
@@ -109,20 +114,20 @@ public class KampRuleLanguageFacade {
 	}
 
 	// basically a convenience method
-	public static Bundle buildProjectAndInstall(String sourceProjectName, IProgressMonitor monitor) {
-		KampRuleLanguageGenerator.buildProject(KampRuleLanguageGenerator.getProject(sourceProjectName), null);
+	public static Bundle buildProjectAndInstall(String sourceProjectName, IProgressMonitor monitor) throws BundleException, CoreException {
+		buildProject(getProject(sourceProjectName), null);
     	
-		return KampRuleLanguageGenerator.installAndStartProjectBundle(sourceProjectName, monitor);
+		return installAndStartProjectBundle(sourceProjectName, monitor);
 	}
 	
 	// basically a convenience method
-	public static Bundle buildProjectAndReInstall(String sourceProjectName, IProgressMonitor monitor) {
-		KampRuleLanguageGenerator.buildProject(KampRuleLanguageGenerator.getProject(sourceProjectName), null);
+	public static Bundle buildProjectAndReInstall(String sourceProjectName, IProgressMonitor monitor) throws CoreException, BundleException {
+		buildProject(getProject(sourceProjectName), null);
     	
-		return KampRuleLanguageGenerator.registerProjectBundle(KampRuleLanguageGenerator.getProject(sourceProjectName), KampRuleLanguageGenerator.getDslBundle(sourceProjectName), monitor);
+		return registerProjectBundle(getProject(sourceProjectName), getDslBundle(sourceProjectName), monitor);
 	}
 
-	public static KampLanguageService getService(String projectName) {
+	public static KampLanguageService getInstance(String projectName) throws BundleException, CoreException {
 		return new KampLanguageService(projectName);
 	}
 	

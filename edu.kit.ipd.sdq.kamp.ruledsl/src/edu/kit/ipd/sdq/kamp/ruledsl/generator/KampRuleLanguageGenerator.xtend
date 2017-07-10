@@ -13,9 +13,7 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.ArrayList
 import java.util.Arrays
-import java.util.Base64
 import java.util.HashSet
-import java.util.Iterator
 import java.util.List
 import java.util.Set
 import java.util.stream.Collectors
@@ -25,9 +23,6 @@ import org.eclipse.core.resources.IFile
 import org.eclipse.core.resources.IFolder
 import org.eclipse.core.resources.IProject
 import org.eclipse.core.resources.IProjectDescription
-import org.eclipse.core.resources.IWorkspace
-import org.eclipse.core.resources.IWorkspaceRoot
-import org.eclipse.core.resources.IncrementalProjectBuilder
 import org.eclipse.core.resources.ResourcesPlugin
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.IProgressMonitor
@@ -35,14 +30,12 @@ import org.eclipse.core.runtime.NullProgressMonitor
 import org.eclipse.core.runtime.Path
 import org.eclipse.core.runtime.Status
 import org.eclipse.core.runtime.SubMonitor
-import org.eclipse.core.runtime.jobs.ISchedulingRule
 import org.eclipse.core.runtime.jobs.Job
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EPackage
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.jdt.core.IClasspathEntry
 import org.eclipse.jdt.core.IJavaProject
-import org.eclipse.jdt.core.IPackageFragmentRoot
 import org.eclipse.jdt.core.JavaCore
 import org.eclipse.jdt.launching.IVMInstall
 import org.eclipse.jdt.launching.JavaRuntime
@@ -52,24 +45,20 @@ import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.generator.IFileSystemAccess
 import org.eclipse.xtext.generator.IFileSystemAccessExtension2
 import org.eclipse.xtext.generator.IGenerator
-import org.eclipse.xtext.xbase.compiler.IGeneratorConfigProvider
 import org.eclipse.xtext.xbase.compiler.JvmModelGenerator
 import org.osgi.framework.Bundle
-import org.osgi.framework.BundleContext
 import org.osgi.framework.FrameworkUtil
 import tools.vitruv.framework.util.bridges.EclipseBridge
+
+import static edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageUtil.*
 
 class KampRuleLanguageGenerator implements IGenerator {
 	
 	@Inject JvmModelGenerator jvmModelGenerator;
 	
-	static val IWorkspace workspace = ResourcesPlugin.getWorkspace();
-    static val IWorkspaceRoot root = workspace.getRoot();
-	
-	public static final String BUNDLE_NAME = "edu.kit.ipd.sdq.kamp.ruledsl.lookup.bundle";
-	
 	// if set true, project does not get delete if an error occurs
 	private static final boolean DEBUG = true;
+	
        
 	override doGenerate(Resource resource, IFileSystemAccess fsa) {
 		// delegate to Java generator in order to generate rule class files
@@ -153,11 +142,12 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   		removeGeneratedFolderContents(project, subMonitor.split(1));
 				   	} else {
 				   		subMonitor.split(1).beginTask("Create plugin project", 1);
-				   		project = createProject(subMonitor.split(1), causingProjectName, packageUris);
+				   		project = createProject(subMonitor.split(1), causingProjectName);
 				   		createService(project, subMonitor.split(1))
 				   		createPluginXml(project, subMonitor.split(1));
 				   	}
-				   					   	
+				   		
+				    createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1))			   	
 				   	createActivator(project, subMonitor.split(1), ruleFile)
 					createServiceBase(project, subMonitor.split(1));
 					createStartupRegistry(project, subMonitor.split(1));
@@ -205,74 +195,6 @@ class KampRuleLanguageGenerator implements IGenerator {
 		}
 	}	
 	
-	static def getDslBundle(String projectName) {
-		val BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageGenerator).getBundleContext();
-	   	var Bundle cBundle = null;
-	    for(Bundle bundle : bundleContext.getBundles()) {
-	    	if(bundle.getSymbolicName() !== null && bundle.getSymbolicName().equals(KampRuleLanguageGenerator.getBundleNameForProjectName(projectName))) {
-	   	  		cBundle = bundle;
-	   	  	}
-	    }
-	    
-	    return cBundle
-	}
-	
-	// unregisteres the given bundle if available and registers it again
-	static def registerProjectBundle(IProject project, Bundle bundle, IProgressMonitor monitor) {
-	    // if there was a bundle registered, wait for the shutdown
-	    if(bundle !== null) {
-	    	monitor.beginTask("Waiting for bundle to be uninstalled", 1)
-	    	println("DSL Bundle found, uninstalling...")
-	    	bundle.uninstall
-	    	// is busy wait ok here as we are in a job?
-	    	while(bundle.state != Bundle.UNINSTALLED) {};
-	    	println("Bundle is finally uninstalled!")
-	    	monitor.worked(1)
-	    }
-	    
-	    println("Installing new bundle version...")
-	    installAndStartProjectBundle(project, monitor)
-	}
-	
-	// convenice method for external calls
-	// returns null if project does not exist, returns installed bundle otherwise
-	static def installAndStartProjectBundle(String callerProjectName, IProgressMonitor monitor) {
-		val IProject project = getProject(callerProjectName);
-		if(!project.exists) {
-			return null;	
-		}
-		
-		installAndStartProjectBundle(project, monitor)
-	}
-		
-	static def installAndStartProjectBundle(IProject project, IProgressMonitor monitor) {
-		// TODO get name by workspace methods
-		monitor.beginTask("Starting bundle", 1)
-		val BundleContext bundleContext = FrameworkUtil.getBundle(KampRuleLanguageGenerator).getBundleContext();
-	    // the bin directory of the plugin
-	    val folder = project.getFolder("bin")
-	    val Bundle b = bundleContext.installBundle("file:" + folder.location.toString);
-	    b.start();
-	    monitor.worked(1)
-	    
-	    return b;
-	    /* lookup the kamp dsl bundle */
-	    // see edu.kit.ipd.sdq.kamp4bp.core#calculateInterBusinessProcessPropagation
-//	   for(bundle : bundlecontext.bundles) {
-//	   	 if(bundle.symbolicName.equals(BUNDLE_NAME)) {
-//	   	 	// call method on bundle
-//	   	 }
-//	   }
-	}
-	
-	public static def buildProject(IProject project, IProgressMonitor monitor) {
-		var IProgressMonitor mon = monitor;
-		if(mon == null) {
-			mon = new NullProgressMonitor
-		}
-		project.build(IncrementalProjectBuilder.AUTO_BUILD, mon);
-	}
-	
 	def moveRuleSourceFiles(IProgressMonitor monitor, IProject destinationProject, URI[] sourceFiles, String[] jFileNames) {				
 		for(var int i = 0; i < sourceFiles.size; i++) {
 			val sourceFile = sourceFiles.get(i)
@@ -299,12 +221,40 @@ class KampRuleLanguageGenerator implements IGenerator {
 		}
 	}	
 	
-	static def getProject(String causingProjectName) {
-		return root.getProject(causingProjectName + "-rules")
+	def createManifest(String projectName, IProject project, Set<String> packageUris,  IProgressMonitor monitor) {
+		val Set<String> requiredBundles = newHashSet
+			val List<String> exportedPackages = newArrayList
+
+			// export the default bundle
+			exportedPackages.add( "." )
+			
+			// search for imported models
+			var registry = EPackage.Registry.INSTANCE;
+			for (String key : new HashSet<String>(registry.keySet())) {
+			    var ePackage = registry.getEPackage(key);
+			    for(packageUri : packageUris) {
+				    if(ePackage.nsURI.equals(packageUri)) {
+				    	// taken from MirBaseQuickFixProvider
+				    	val String contributorName = EclipseBridge.getNameOfContributorOfExtension("org.eclipse.emf.ecore.generated_package", "uri", ePackage.nsURI)
+				   		requiredBundles.add(contributorName)
+				    }
+			    }
+			}
+			
+			// for service interface reference
+			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
+			requiredBundles.add("org.eclipse.ui");
+			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
+			requiredBundles.add("edu.kit.ipd.sdq.kamp.model.modificationmarks")
+			requiredBundles.add("edu.kit.ipd.sdq.kamp4is")
+			requiredBundles.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
+			requiredBundles.add("edu.kit.ipd.sdq.kamp")
+			
+			createManifest(projectName, requiredBundles, exportedPackages, monitor, project);
 	}
 	
 	// see: https://sdqweb.ipd.kit.edu/wiki/JDT_Tutorial:_Creating_Eclipse_Java_Projects_Programmatically
-	def createProject(IProgressMonitor progressMonitor, String name, Set<String> packageUris) {
+	def createProject(IProgressMonitor progressMonitor, String name) {
 		var IProject compilerProject = getProject(name)
 				
 		if (!compilerProject.exists) {
@@ -335,39 +285,12 @@ class KampRuleLanguageGenerator implements IGenerator {
             description.buildSpec = #[java, manifest, schema]
 			compilerProject.setDescription(description, progressMonitor);
 			
-			
-			val String projectName = getBundleNameForProjectName(name);
-			val Set<String> requiredBundles = newHashSet
-			val List<String> exportedPackages = newArrayList
 			val List<String> srcFolders = newArrayList
-			
-			// export the default bundle
-			exportedPackages.add( "." )
-			
-			// search for imported models
-			var registry = EPackage.Registry.INSTANCE;
-			for (String key : new HashSet<String>(registry.keySet())) {
-			    var ePackage = registry.getEPackage(key);
-			    for(packageUri : packageUris) {
-				    if(ePackage.nsURI.equals(packageUri)) {
-				    	// taken from MirBaseQuickFixProvider
-				    	val String contributorName = EclipseBridge.getNameOfContributorOfExtension("org.eclipse.emf.ecore.generated_package", "uri", ePackage.nsURI)
-				   		requiredBundles.add(contributorName)
-				    }
-			    }
-			}
-			
-			// for service interface reference
-			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
-			requiredBundles.add("org.eclipse.ui");
-			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
-			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.service")
 			
 			srcFolders.add("src");
 			srcFolders.add("gen");
 			
-			createManifest(projectName, requiredBundles, exportedPackages, progressMonitor, compilerProject);
-	        createBuildProps(progressMonitor, compilerProject, srcFolders);
+			createBuildProps(progressMonitor, compilerProject, srcFolders);
 			
 			val IJavaProject compilerJavaProject = JavaCore.create(compilerProject)
 	
@@ -377,7 +300,6 @@ class KampRuleLanguageGenerator implements IGenerator {
 			
 //			entries.addAll(Arrays.asList(NewJavaProjectPreferencePage.getDefaultJRELibrary()));
 			entries.add(JavaCore.newContainerEntry(new Path("org.eclipse.pde.core.requiredPlugins")));
-			
 			
 			val IVMInstall vmInstall= JavaRuntime.getDefaultVMInstall();
 			val LibraryLocation[] locations= JavaRuntime.getLibraryLocations(vmInstall);
@@ -406,10 +328,10 @@ class KampRuleLanguageGenerator implements IGenerator {
 				metaFolder.create(false, true, progressMonitor);
 			
 			// add src and generated as source folders
-			val IPackageFragmentRoot srcFolderFrag = compilerJavaProject.getPackageFragmentRoot(sourceFolder);
-			val IPackageFragmentRoot genFolderFrag = compilerJavaProject.getPackageFragmentRoot(genFolder);
-			val IPackageFragmentRoot metaFolderFrag = compilerJavaProject.getPackageFragmentRoot(metaFolder);
-			
+//			val IPackageFragmentRoot srcFolderFrag = compilerJavaProject.getPackageFragmentRoot(sourceFolder);
+//			val IPackageFragmentRoot genFolderFrag = compilerJavaProject.getPackageFragmentRoot(genFolder);
+//			val IPackageFragmentRoot metaFolderFrag = compilerJavaProject.getPackageFragmentRoot(metaFolder);
+//			
 			var IClasspathEntry[] oldEntries = compilerJavaProject.getRawClasspath();
 			val ArrayList<IClasspathEntry> oldEntriesMod = new ArrayList<IClasspathEntry>(oldEntries);	// dirty!... make list changeable
 			
@@ -435,10 +357,6 @@ class KampRuleLanguageGenerator implements IGenerator {
 		}
 		
 		return compilerProject
-	}
-	
-	public static def getBundleNameForProjectName(String name) {
-		return BUNDLE_NAME + "." + Base64.encoder.withoutPadding.encodeToString(name.bytes).toLowerCase
 	}
 	
 	def createPluginXml(IProject project, IProgressMonitor progressMonitor) {
@@ -521,7 +439,14 @@ class KampRuleLanguageGenerator implements IGenerator {
 		maniContent.append("Import-Package: edu.kit.ipd.sdq.kamp4bp.core\r\n")
 
 		var IFolder metaInf = project.getFolder("META-INF");
-		metaInf.create(false, true, progressMonitor);
+		if(!metaInf.exists) {
+			metaInf.create(false, true, progressMonitor);
+		}
+		
+		if(metaInf.getFile("MANIFEST.MF").exists) {
+			metaInf.getFile("MANIFEST.MF").delete(true, progressMonitor)
+		}
+			
 		createFile("MANIFEST.MF", metaInf, maniContent.toString(), progressMonitor);
 	}
 	

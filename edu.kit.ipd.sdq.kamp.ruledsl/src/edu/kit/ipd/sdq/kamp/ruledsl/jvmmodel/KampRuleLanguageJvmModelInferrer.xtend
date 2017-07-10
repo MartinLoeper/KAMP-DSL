@@ -27,6 +27,9 @@ import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
 import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion
+import edu.kit.ipd.sdq.kamp4is.model.modificationmarks.ISChangePropagationDueToDataDependencies
+import edu.kit.ipd.sdq.kamp4is.core.AbstractISChangePropagationAnalysis
+import edu.kit.ipd.sdq.kamp4is.core.ISArchitectureVersion
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -82,6 +85,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				val method = rule.toMethod(getMethodName(), typeRef("void")) [
 					//parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
 					parameters += rule.toParameter("version", typeRef(BPArchitectureVersion))
+					parameters += rule.toParameter("changePropagationAnalysis", typeRef(AbstractISChangePropagationAnalysis, wildcardExtends(typeRef(ISArchitectureVersion)), wildcardExtends(typeRef(ISChangePropagationDueToDataDependencies))))
 					
 					nameForLookup.put(null, "input")
 					body = '''
@@ -89,7 +93,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					'''
 				];
 				
-				//method.annotations += annotationRef(Override)
+				method.annotations += annotationRef(Override)
 				theClass.members += method;
 			]);
 	}
