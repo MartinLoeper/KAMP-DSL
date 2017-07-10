@@ -30,3 +30,6 @@ The old SVN Repository URL is: https://svnserver.informatik.kit.edu/i43/svn/code
 - possibly even a JDK  is necessary as we are using JDT to compile the Eclipse Plugin Project
 - the MANIFEST.mf file must import all necessary models which are referenced from .karl file via import (QuickFix available) as required bundles
 - the MANIFEST.mf file must import all Java classes which are referenced by KampRuleLanguageJvmModelInferrer as required bundles
+
+## Wiki
+For more information please navigate into the Wiki of this project.
