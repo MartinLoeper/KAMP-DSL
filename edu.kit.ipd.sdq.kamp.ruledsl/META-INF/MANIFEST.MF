@@ -26,10 +26,11 @@ Require-Bundle: org.eclipse.xtext,
  org.eclipse.pde;bundle-version="3.12.3",
  org.eclipse.pde.core;bundle-version="3.11.1",
  tools.vitruv.framework.util;bundle-version="0.2.0",
- org.eclipse.xtext.ui;bundle-version="2.11.0"
+ org.eclipse.xtext.ui;bundle-version="2.11.0",
+ edu.kit.ipd.sdq.kamp;bundle-version="1.0.0",
+ edu.kit.ipd.sdq.kamp4bp;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Export-Package: edu.kit.ipd.sdq.kamp.ruledsl,
- edu.kit.ipd.sdq.kamp.ruledsl.generator,
+Export-Package: edu.kit.ipd.sdq.kamp.ruledsl.generator,
  edu.kit.ipd.sdq.kamp.ruledsl.jvmmodel,
  edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage,
  edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.impl,
@@ -38,10 +39,9 @@ Export-Package: edu.kit.ipd.sdq.kamp.ruledsl,
  edu.kit.ipd.sdq.kamp.ruledsl.parser.antlr.internal,
  edu.kit.ipd.sdq.kamp.ruledsl.scoping,
  edu.kit.ipd.sdq.kamp.ruledsl.serializer,
- edu.kit.ipd.sdq.kamp.ruledsl.service,
  edu.kit.ipd.sdq.kamp.ruledsl.services,
- edu.kit.ipd.sdq.kamp.ruledsl.validation
-Import-Package: edu.kit.ipd.sdq.kamp4bp.core,
- edu.kit.ipd.sdq.kamp4is.core,
+ edu.kit.ipd.sdq.kamp.ruledsl.validation,
+ edu.kit.ipd.sdq.kamp.ruledsl
+Import-Package: edu.kit.ipd.sdq.kamp4is.core,
  edu.kit.ipd.sdq.kamp4is.model.modificationmarks,
  org.apache.log4j

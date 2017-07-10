@@ -6,6 +6,7 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-SymbolicName: edu.kit.ipd.sdq.kamp.ruledsl.ui; singleton:=true
 Bundle-ActivationPolicy: lazy
 Require-Bundle: edu.kit.ipd.sdq.kamp.ruledsl,
+ edu.kit.ipd.sdq.kamp,
  edu.kit.ipd.sdq.kamp.ruledsl.ide,
  org.eclipse.xtext.ui,
  org.eclipse.xtext.ui.shared,

@@ -8,15 +8,14 @@ import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.BackwardEReference
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.ForwardEReference
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRule
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.Lookup
-import edu.kit.ipd.sdq.kamp.ruledsl.service.IRule
 import edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil
-import java.util.Collections
+import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion
+import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRule
+import edu.kit.ipd.sdq.kamp4is.core.AbstractISChangePropagationAnalysis
+import edu.kit.ipd.sdq.kamp4is.core.ISArchitectureVersion
+import edu.kit.ipd.sdq.kamp4is.model.modificationmarks.ISChangePropagationDueToDataDependencies
 import java.util.Map
-import java.util.Set
-import java.util.stream.Collectors
-import java.util.stream.Stream
 import org.eclipse.emf.ecore.EClass
-import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.common.types.JvmGenericType
 import org.eclipse.xtext.xbase.jvmmodel.AbstractModelInferrer
@@ -26,10 +25,6 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
-import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion
-import edu.kit.ipd.sdq.kamp4is.model.modificationmarks.ISChangePropagationDueToDataDependencies
-import edu.kit.ipd.sdq.kamp4is.core.AbstractISChangePropagationAnalysis
-import edu.kit.ipd.sdq.kamp4is.core.ISArchitectureVersion
 
 /**
  * <p>Infers a JVM model from the source model.</p> 

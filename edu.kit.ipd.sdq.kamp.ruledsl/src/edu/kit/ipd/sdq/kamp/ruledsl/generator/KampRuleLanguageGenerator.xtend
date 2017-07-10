@@ -50,7 +50,7 @@ import org.osgi.framework.Bundle
 import org.osgi.framework.FrameworkUtil
 import tools.vitruv.framework.util.bridges.EclipseBridge
 
-import static edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageUtil.*
+import static edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil.*
 
 class KampRuleLanguageGenerator implements IGenerator {
 	
@@ -165,7 +165,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   	}
 				   	
 				   	println("DONE")
-				   	
+				   	 
 				   	monitor.done
 				   
 				    Status.OK_STATUS

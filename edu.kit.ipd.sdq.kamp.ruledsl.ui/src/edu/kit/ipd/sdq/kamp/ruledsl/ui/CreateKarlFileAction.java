@@ -1,13 +1,10 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.ui;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.action.IAction;
@@ -19,8 +16,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IActionDelegate;
 import org.eclipse.ui.PlatformUI;
 
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageFacade;
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageFacade.KampLanguageService;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageFacade;
 import edu.kit.ipd.sdq.kamp.util.FileAndFolderManagement;
 
 public class CreateKarlFileAction implements IActionDelegate {

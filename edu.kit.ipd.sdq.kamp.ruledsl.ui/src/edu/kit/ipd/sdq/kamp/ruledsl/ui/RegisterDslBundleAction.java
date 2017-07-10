@@ -4,18 +4,25 @@ import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IActionDelegate;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressService;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.FrameworkUtil;
 
-import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageFacade;
+import edu.kit.ipd.sdq.kamp.ruledsl.ErrorHandlingUtil;
 import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageFacade;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil;
 import edu.kit.ipd.sdq.kamp.util.FileAndFolderManagement;
 
 public class RegisterDslBundleAction implements IActionDelegate {
@@ -31,7 +38,12 @@ public class RegisterDslBundleAction implements IActionDelegate {
 	   try {
 			ps.busyCursorWhile(new IRunnableWithProgress() {
 		      public void run(IProgressMonitor monitor) {
-		  		KampRuleLanguageFacade.buildProjectAndReInstall(sourceProjectName, monitor);
+		  		try {
+					KampRuleLanguageFacade.buildProjectAndReInstall(sourceProjectName, monitor);
+				} catch (CoreException | BundleException e) {
+					Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+	                ErrorDialog.openError(shell, "Error", "The bundle could not be successfully created and injected.", ErrorHandlingUtil.createMultiStatus(FrameworkUtil.getBundle(KampRuleLanguageUtil.class).getSymbolicName(), e.getLocalizedMessage(), e));
+				}
 		      }
 		   });
 		} catch (InvocationTargetException e) {
@@ -57,7 +69,7 @@ public class RegisterDslBundleAction implements IActionDelegate {
 				String dslProjectName = this.selectedProject.getName();
 				sourceProjectName = dslProjectName.substring(0, dslProjectName.length() - 6);
 			} else if(KampRuleLanguageFacade.isKampProjectFolder(this.selectedProject)) {
-				if(!KampRuleLanguageGenerator.getProject(this.selectedProject.getName()).exists()) {
+				if(!KampRuleLanguageUtil.getProject(this.selectedProject.getName()).exists()) {
 					action.setEnabled(false);
 				} else {
 					action.setEnabled(true);
