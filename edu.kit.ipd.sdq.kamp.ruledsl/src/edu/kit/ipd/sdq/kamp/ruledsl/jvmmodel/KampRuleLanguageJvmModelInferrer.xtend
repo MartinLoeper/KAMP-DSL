@@ -85,24 +85,12 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					
 					nameForLookup.put(null, "input")
 					body = '''
-						«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
-
-						«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
-							«Stream».of(«rule.source.metaclass.name.toFirstLower»);
 						
-						«FOR x : rule.lookups»
-							«x.generateCodeForRule(theClass)»
-						«ENDFOR»
-						
-						return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
 					'''
 				];
 				
 				//method.annotations += annotationRef(Override)
 				theClass.members += method;
-				val dummy = rule.toMethod("apply", typeRef("void"), []);
-				dummy.body = ''''''
-				theClass.members += dummy
 			]);
 	}
 	

@@ -54,7 +54,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
     private void registerRules() {
     	// register the rules
     	@SuppressWarnings("unchecked")
-		Class<? extends IRule>[] rules = new Class[] { TestRule.class, Test2Rule.class, AaRule.class, BbRule.class };
+		Class<? extends IRule>[] rules = new Class[] { %s };
     	for(Class<? extends IRule> cRule : rules) {
     		try {
 				this.ruleProvider.register(cRule.newInstance());

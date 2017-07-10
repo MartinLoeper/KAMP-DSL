@@ -640,7 +640,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 	        var String res = new BufferedReader(new InputStreamReader(in)).lines().collect(Collectors.joining("\n"));
 			res = String.format(res, rulesToBeRegistered)
 	        		
-			pluginProject.getFolder("gen").getFile("Activator.java").create(new ByteArrayInputStream(res.getBytes(StandardCharsets.UTF_8)), false, monitor)
+			pluginProject.getFolder("gen").getFile("Activator.java").create(new ByteArrayInputStream(res.getBytes(StandardCharsets.UTF_8)), true, monitor)
     	} finally {
     		try { if(in !== null) in.close(); } finally {}
     	}	
@@ -682,7 +682,7 @@ class KampRuleLanguageGenerator implements IGenerator {
     def removeGeneratedFolderContents(IProject destinationProject, IProgressMonitor monitor) {
 		if(!destinationProject.getFolder("gen").exists)
 			return;
-		
+			
 		for(res : destinationProject.getFolder("gen").members) {
 			res.delete(true, monitor)
 		}
