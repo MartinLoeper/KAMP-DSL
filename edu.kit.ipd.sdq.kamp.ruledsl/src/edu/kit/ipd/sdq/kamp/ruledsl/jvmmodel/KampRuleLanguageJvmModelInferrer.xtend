@@ -4,18 +4,21 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.jvmmodel
 
 import com.google.inject.Inject
+import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion
+import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.BackwardEReference
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.ForwardEReference
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRule
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.Lookup
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule
 import edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil
-import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion
-import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRule
-import edu.kit.ipd.sdq.kamp4is.core.AbstractISChangePropagationAnalysis
-import edu.kit.ipd.sdq.kamp4is.core.ISArchitectureVersion
-import edu.kit.ipd.sdq.kamp4is.model.modificationmarks.ISChangePropagationDueToDataDependencies
+import java.util.Collections
 import java.util.Map
+import java.util.Set
+import java.util.stream.Collectors
+import java.util.stream.Stream
 import org.eclipse.emf.ecore.EClass
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.common.types.JvmGenericType
 import org.eclipse.xtext.xbase.jvmmodel.AbstractModelInferrer
@@ -77,10 +80,9 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				nameForLookup = newHashMap
 				theClass.superTypes += typeRef(IRule)
 							
-				val method = rule.toMethod(getMethodName(), typeRef("void")) [
-					//parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))
-					parameters += rule.toParameter("version", typeRef(BPArchitectureVersion))
-					parameters += rule.toParameter("changePropagationAnalysis", typeRef(AbstractISChangePropagationAnalysis, wildcardExtends(typeRef(ISArchitectureVersion)), wildcardExtends(typeRef(ISChangePropagationDueToDataDependencies))))
+				val applyMethod = rule.toMethod(getMethodName(), typeRef("void")) [
+					parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion))
+					parameters += rule.toParameter("changePropagationAnalysis", typeRef(AbstractChangePropagationAnalysis))
 					
 					nameForLookup.put(null, "input")
 					body = '''
@@ -88,9 +90,35 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					'''
 				];
 				
-				method.annotations += annotationRef(Override)
-				theClass.members += method;
+				applyMethod.annotations += annotationRef(Override)
+				
+				val lookupMethod = rule.toMethod(rule.lookupMethodName, typeRef(Set)) [
+					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))		
+
+					nameForLookup.put(null, "input")
+					body = '''
+						«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
+						
+						«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
+							«Stream».of(«rule.source.metaclass.name.toFirstLower»);
+						
+						«FOR x : rule.lookups»
+							«x.generateCodeForRule(theClass)»
+						«ENDFOR»
+						
+						return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
+					'''
+				];
+				// TODO make this work!!
+				lookupMethod.returnType = Set.typeRef()	// rule.returnType.instanceTypeName.typeRef()				
+				
+				theClass.members += applyMethod;
+				theClass.members += lookupMethod
 			]);
+	}
+	
+	def String getLookupMethodName(KampRule rule) {
+		'lookup' + rule.lookups.last.metaclass.name + 'from' + rule.source.metaclass.name
 	}
 	
 	

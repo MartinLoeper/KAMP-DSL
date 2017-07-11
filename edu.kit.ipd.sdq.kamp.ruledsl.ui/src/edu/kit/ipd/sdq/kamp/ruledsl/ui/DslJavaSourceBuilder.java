@@ -49,21 +49,27 @@ public class DslJavaSourceBuilder extends IncrementalProjectBuilder {
 	  				try {
 						KampRuleLanguageFacade.buildProjectAndReInstall(projectName.substring(0, projectName.length() - 6), subMonitor.split(10));
 					} catch (OperationCanceledException | BundleException e) {
-						Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-		                ErrorDialog.openError(shell, "Error", "The bundle could not be successfully created and injected.", ErrorHandlingUtil.createMultiStatus(FrameworkUtil.getBundle(KampRuleLanguageUtil.class).getSymbolicName(), e.getLocalizedMessage(), e));
+						PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
+							@Override
+							public void run() {
+								Shell shell = PlatformUI.getWorkbench().getDisplay().getActiveShell();
+								ErrorDialog.openError(shell, "Error", "The bundle could not be successfully created and injected.", ErrorHandlingUtil.createMultiStatus(FrameworkUtil.getBundle(KampRuleLanguageUtil.class).getSymbolicName(), e.getLocalizedMessage(), e));
+							}
+						});
 					}
 	  			} else if(resource.getName().equals("gen")) {
-	  				PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
-
-	  		            @Override
-	  		            public void run() {
-	  		            	MessageBox dialog = new MessageBox(PlatformUI.getWorkbench().getDisplay().getActiveShell(), SWT.ICON_WARNING | SWT.OK);
-	  						dialog.setText("Warning");
-	  						dialog.setMessage("Making changes to the gen package is strongly discouraged.");
-	  			
-	  						dialog.open();
-	  		            }
-	  		        });
+	  				// we have to check if the build was triggered by a user change... how to do that?
+//	  				PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
+//
+//	  		            @Override
+//	  		            public void run() {
+//	  		            	MessageBox dialog = new MessageBox(PlatformUI.getWorkbench().getDisplay().getActiveShell(), SWT.ICON_WARNING | SWT.OK);
+//	  						dialog.setText("Warning");
+//	  						dialog.setMessage("Making changes to the gen package is strongly discouraged.");
+//	  			
+//	  						dialog.open();
+//	  		            }
+//	  		        });
 	  			}
 	  		}
 	      }

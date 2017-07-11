@@ -3,8 +3,8 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil;
-import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRule;
-import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRuleProvider;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
 import src.RuleProviderImpl;
 import gen.rule.*;
 

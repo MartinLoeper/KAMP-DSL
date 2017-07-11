@@ -9,20 +9,17 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 
-import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion;
-import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRule;
-import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRuleProvider;
-import edu.kit.ipd.sdq.kamp4is.core.AbstractISChangePropagationAnalysis;
-import edu.kit.ipd.sdq.kamp4is.core.ISArchitectureVersion;
-import edu.kit.ipd.sdq.kamp4is.model.modificationmarks.ISChangePropagationDueToDataDependencies;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
+import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis;
+import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion;
 
 public abstract class RuleProviderBase implements IRuleProvider {
 	
 	private Collection<IRule> rules = new HashSet<>();
 	
 	@Override
-	public final void applyAllRules(BPArchitectureVersion version, AbstractISChangePropagationAnalysis<? extends ISArchitectureVersion, 
-			? extends ISChangePropagationDueToDataDependencies> changePropagationAnalysis) {
+	public final void applyAllRules(AbstractArchitectureVersion version, AbstractChangePropagationAnalysis changePropagationAnalysis) {
 		System.out.println("Applying all custom dsl rules...");
 		
 		for(IRule cRule : this.rules) {
@@ -68,7 +65,7 @@ public abstract class RuleProviderBase implements IRuleProvider {
 	 * @param oldRule the rule which will be replaced
 	 * @param newRule the new instance of the rule
 	 */
-	public final <T extends IRule, U extends T> void override(U newRule) {
+	public final <T extends IRule> void override(T newRule) {
 		// if rule is already defined, replace it
 		// also replace already registered rules
 		// this allows the user to register custom rules

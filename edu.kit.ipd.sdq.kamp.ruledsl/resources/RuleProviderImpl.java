@@ -22,8 +22,7 @@ public class RuleProviderImpl extends RuleProviderBase {
 	 	override(new IRule() {
 	 	
 			@Override
-			public void apply(BPArchitectureVersion version, AbstractISChangePropagationAnalysis<? extends ISArchitectureVersion, 
-					? extends ISChangePropagationDueToDataDependencies> changePropagationAnalysis) {
+			public void apply(AbstractArchitectureVersion version, AbstractChangePropagationAnalysis changePropagationAnalysis) {
 				JOptionPane.showMessageDialog(null, "Custom rule is working!");
 			}
 		});
