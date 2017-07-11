@@ -11,6 +11,9 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.BundleException;
@@ -28,7 +31,7 @@ public class DslJavaSourceBuilder extends IncrementalProjectBuilder {
 	 protected IProject[] build(final int kind, final Map<String, String> args, final IProgressMonitor monitor) throws CoreException {
 	 SubMonitor subMonitor = SubMonitor.convert(monitor, "Build and register project", 10);
 		 
-	  System.out.println("A source file was saved. Trigger the custom builder.");
+	  System.out.println("A file was saved. Trigger the custom builder.");
 	  
 	  if (kind == IncrementalProjectBuilder.AUTO_BUILD || kind == IncrementalProjectBuilder.INCREMENTAL_BUILD) {
 		 IResourceDelta delta = getDelta(getProject());
@@ -49,7 +52,18 @@ public class DslJavaSourceBuilder extends IncrementalProjectBuilder {
 						Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 		                ErrorDialog.openError(shell, "Error", "The bundle could not be successfully created and injected.", ErrorHandlingUtil.createMultiStatus(FrameworkUtil.getBundle(KampRuleLanguageUtil.class).getSymbolicName(), e.getLocalizedMessage(), e));
 					}
-	  				break;
+	  			} else if(resource.getName().equals("gen")) {
+	  				PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
+
+	  		            @Override
+	  		            public void run() {
+	  		            	MessageBox dialog = new MessageBox(PlatformUI.getWorkbench().getDisplay().getActiveShell(), SWT.ICON_WARNING | SWT.OK);
+	  						dialog.setText("Warning");
+	  						dialog.setMessage("Making changes to the gen package is strongly discouraged.");
+	  			
+	  						dialog.open();
+	  		            }
+	  		        });
 	  			}
 	  		}
 	      }

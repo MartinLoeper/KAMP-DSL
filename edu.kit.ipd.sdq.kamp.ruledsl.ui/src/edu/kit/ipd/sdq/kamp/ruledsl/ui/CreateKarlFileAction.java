@@ -11,6 +11,7 @@ import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IActionDelegate;
@@ -31,11 +32,17 @@ public class CreateKarlFileAction implements IActionDelegate {
 				IFile file = this.selectedProject.getFile("rules.karl");
 				Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 				if(file.exists()) {
-					MessageBox dialog = new MessageBox(shell, SWT.ICON_ERROR | SWT.ABORT);
-					dialog.setText("Fehler");
-					dialog.setMessage("Es befindet sich bereits eine Regeldatei in diesem Projekt.");
+					PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
 
-					dialog.open();
+	  		            @Override
+	  		            public void run() {
+	  		            	MessageBox dialog = new MessageBox(PlatformUI.getWorkbench().getDisplay().getActiveShell(), SWT.ICON_ERROR | SWT.ABORT);
+	  						dialog.setText("Fehler");
+	  						dialog.setMessage("There is already a rule definition file in this project.");
+
+	  						dialog.open();
+	  		            }
+	  		        });
 				} else {
 					try {
 						file.create(new ByteArrayInputStream( new byte[0] ), false, new NullProgressMonitor());
