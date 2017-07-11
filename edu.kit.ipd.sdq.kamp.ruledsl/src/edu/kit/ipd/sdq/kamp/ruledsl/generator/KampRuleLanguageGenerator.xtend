@@ -141,17 +141,18 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   	if(reload) {
 				   		project = getProject(causingProjectName)
 				   		removeGeneratedFolderContents(project, subMonitor.split(1));
+				   		createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1), true)			   	
 				   	} else {
 				   		subMonitor.split(1).beginTask("Create plugin project", 1);
 				   		project = createProject(subMonitor.split(1), causingProjectName);
 				   		createService(project, subMonitor.split(1))
 				   		createPluginXml(project, subMonitor.split(1));
+				   		createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1), false)
 				   	}
 				   		
-				    createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1))			   	
-				   	createActivator(project, subMonitor.split(1), ruleFile)
+				    createActivator(project, subMonitor.split(1), ruleFile)
 					createServiceBase(project, subMonitor.split(1));
-					createStartupRegistry(project, subMonitor.split(1));
+					//createStartupRegistry(project, subMonitor.split(1));
 				   	
 				   	// the following line is not needed anymore as we have a custom FileSystemAccess right now
 				   	moveRuleSourceFiles(subMonitor.split(1), project, sourceFileUris, javaFileNames);
@@ -227,7 +228,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		}
 	}	
 	
-	def createManifest(String projectName, IProject project, Set<String> packageUris,  IProgressMonitor monitor) {
+	def createManifest(String projectName, IProject project, Set<String> packageUris,  IProgressMonitor monitor, boolean preserveLastLine) {
 			val Set<String> requiredBundles = newHashSet
 			val Set<String> importedPackages = newHashSet
 			val List<String> exportedPackages = newArrayList
@@ -269,7 +270,29 @@ class KampRuleLanguageGenerator implements IGenerator {
 			importedPackages.add("edu.kit.ipd.sdq.kamp.architecture")
 			importedPackages.add("edu.kit.ipd.sdq.kamp.model.modificationmarks");
 			
-			createManifest(projectName, requiredBundles, importedPackages, exportedPackages, monitor, project);
+			var String lastLine = null;
+			if(preserveLastLine) {
+				val IFolder metaFolder = project.getFolder("META-INF");
+				if(metaFolder.exists) {
+					val IFile metaFile = metaFolder.getFile("MANIFEST.MF"); 
+					if(metaFile.exists) {
+						val is = metaFile.contents;
+						val reader = new BufferedReader(new InputStreamReader(is));
+						try {
+							val String contents = reader.lines().collect(Collectors.joining("\n"));
+							lastLine = contents.substring(contents.lastIndexOf("\n") + 1) + "\n"
+						} finally {
+							if(reader !== null)
+								try { reader.close } catch(IOException e) {}
+								
+							if(is !== null)
+								try { is.close } catch(IOException e) {}
+						}
+					}
+				}
+			} 
+			
+			createManifest(projectName, requiredBundles, importedPackages, exportedPackages, monitor, project, lastLine);
 	}
 	
 	def createProject(IProgressMonitor progressMonitor, String name) {
@@ -371,10 +394,10 @@ class KampRuleLanguageGenerator implements IGenerator {
 		val String template = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 			+ "<?eclipse version=\"3.4\"?>\n"
 			+ "<plugin>\n"
-			+  "<extension point=\"org.eclipse.ui.startup\">\n"
-			+      "<startup class=\"gen.Startup\">\n"
-			+      "</startup>\n"
-			+   "</extension>\n"
+//			+  "<extension point=\"org.eclipse.ui.startup\">\n"
+//			+      "<startup class=\"gen.Startup\">\n"
+//			+      "</startup>\n"
+//			+   "</extension>\n"
 //			+ "<extension\n"
 //       		+		"id=\"edu.kit.ipd.sdq.kamp.ruledsl.ui.sourceBuilder\"\n"
 //      		+	 	"name=\"Kamp Rule Source Code Builder\"\n"
@@ -422,9 +445,13 @@ class KampRuleLanguageGenerator implements IGenerator {
 	}
 
 	def createManifest(String projectName, Set<String> requiredBundles,  Set<String> importedPackages,
-			List<String> exportedPackages, IProgressMonitor progressMonitor, IProject project)
+			List<String> exportedPackages, IProgressMonitor progressMonitor, IProject project, String lastLine)
 	throws CoreException {
 		val StringBuilder maniContent = new StringBuilder("Manifest-Version: 1.0\n");
+		maniContent.append("Comment: Do NOT MODIFY THIS FILE, except for the last Import-Package line\n")
+		maniContent.append("See-Second-Line-Heads-Up: \n");
+		maniContent.append("See-Second-Line-Caution: \n");
+		maniContent.append("See-Second-Line-Attention: \n");
 		maniContent.append("Bundle-ManifestVersion: 2\n");
 		maniContent.append("Bundle-Name: " + projectName + "\n");
 		maniContent.append("Bundle-SymbolicName: " + projectName + "; singleton:=true\n");
@@ -458,17 +485,22 @@ class KampRuleLanguageGenerator implements IGenerator {
 		maniContent.append("Bundle-RequiredExecutionEnvironment: J2SE-1.5\r\n");
 		
 		// add package imports
-		if(importedPackages.size > 0)
-			maniContent.append("Import-Package: ");
-		var int k = 0;
-		for (String entry : importedPackages) {
-			if(k != 0) {
-				maniContent.append(",");
+		if(lastLine === null) {
+			if(importedPackages.size > 0)
+				maniContent.append("Import-Package: ");
+			var int k = 0;
+			for (String entry : importedPackages) {
+				if(k != 0) {
+					maniContent.append(",");
+				}
+				maniContent.append(entry);
+				k++;
 			}
-			maniContent.append(entry);
-			k++;
+			maniContent.append("\n");
+		} else {
+			// the last line of the manifest was supplied by the caller
+			maniContent.append(lastLine);
 		}
-		maniContent.append("\n");
 		
 		var IFolder metaInf = project.getFolder("META-INF");
 		if(!metaInf.exists) {
