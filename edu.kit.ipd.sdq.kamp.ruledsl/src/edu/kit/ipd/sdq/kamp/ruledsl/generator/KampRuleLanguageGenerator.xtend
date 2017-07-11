@@ -51,6 +51,7 @@ import org.osgi.framework.FrameworkUtil
 import tools.vitruv.framework.util.bridges.EclipseBridge
 
 import static edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil.*
+import java.io.FileNotFoundException
 
 class KampRuleLanguageGenerator implements IGenerator {
 	
@@ -132,7 +133,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 			
 			override protected run(IProgressMonitor mon) {
 				val boolean reload = root.getProject(causingProjectName + "-rules").exists;
-				val SubMonitor subMonitor = SubMonitor.convert(mon, mainName, 12);
+				val SubMonitor subMonitor = SubMonitor.convert(mon, mainName, 18);
 					
 				try {
 				   	var IProject project;
@@ -154,12 +155,13 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   	
 				   	// the following line is not needed anymore as we have a custom FileSystemAccess right now
 				   	moveRuleSourceFiles(subMonitor.split(1), project, sourceFileUris, javaFileNames);
-				   	buildProject(project, subMonitor.split(1));
-				   	project.refreshLocal(IProject.DEPTH_INFINITE, subMonitor.split(1))
 				  
 				   	if(!reload) {
 				  	 	setupProject(subMonitor.split(3), project)
 				   	}
+				   	
+				   	buildProject(project, subMonitor.split(1));
+				   	project.refreshLocal(IProject.DEPTH_INFINITE, subMonitor.split(1))
 				   	
 				   	val Bundle dslBundle = getDslBundle(causingProjectName);
 				   	if(dslBundle !== null) {
@@ -295,7 +297,6 @@ class KampRuleLanguageGenerator implements IGenerator {
 	
 	// see: https://sdqweb.ipd.kit.edu/wiki/JDT_Tutorial:_Creating_Eclipse_Java_Projects_Programmatically
 	def setupProject(IProgressMonitor progressMonitor, IProject compilerProject) {		
-		compilerProject.open(progressMonitor)	
 
 		// add Java nature
 		val IProjectDescription description = compilerProject.getDescription();
@@ -303,8 +304,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		newNatures.add(JavaCore.NATURE_ID)
 		newNatures.add(IBundleProjectDescription.PLUGIN_NATURE)
 		description.setNatureIds(newNatures);
-		compilerProject.setDescription(description, progressMonitor);
-		
+
 		// init PDE stuffe / set up Eclipse Plugin Project nature
 		// source: http://sodecon.blogspot.de/2009/09/create-elicpse-plug-in-project.html
 		
@@ -329,9 +329,11 @@ class KampRuleLanguageGenerator implements IGenerator {
 		srcFolders.add("gen");
 		
 		createBuildProps(progressMonitor, compilerProject, srcFolders);
+		compilerProject.close(progressMonitor)	// do this to release resources before accessing pdt
 		
-		val IJavaProject compilerJavaProject = JavaCore.create(compilerProject)
-
+		compilerProject.open(progressMonitor)
+		val IJavaProject compilerJavaProject = JavaCore.create(compilerProject);
+		
 		// add JRE to classpath
 		var Set<IClasspathEntry> entries = new HashSet<IClasspathEntry>();
 		entries.addAll(Arrays.asList(compilerJavaProject.getRawClasspath()));
@@ -346,52 +348,19 @@ class KampRuleLanguageGenerator implements IGenerator {
 			entries.add(JavaCore.newLibraryEntry(element.getSystemLibraryPath(), null, null));
 		}
 		
-		compilerJavaProject.setRawClasspath(entries, progressMonitor);
+		try {
+			compilerJavaProject.setRawClasspath(entries, progressMonitor);
+		} catch(Exception e) {
+			// on windows systems the file locking might prevent from update external folders, but we do not need this
+			e.printStackTrace
+		}
 					
 		// set bin folder
 		val IFolder binFolder = compilerProject.getFolder("bin");
 		if(!binFolder.exists)
 			binFolder.create(false, true, null);
+			
 		compilerJavaProject.setOutputLocation(binFolder.getFullPath(), progressMonitor);			
-					
-		// create gen and source folder and META-INF
-		val IFolder sourceFolder = compilerProject.getFolder("src");
-		// sourceFolder.create(false, true, progressMonitor);
-		
-		val IFolder genFolder = compilerProject.getFolder("gen");
-		//genFolder.create(false, true, progressMonitor);
-		
-		val IFolder metaFolder = compilerProject.getFolder("META-INF");
-//		if(!metaFolder.exists)
-//			metaFolder.create(false, true, progressMonitor);
-		
-		// add src and generated as source folders
-//			val IPackageFragmentRoot srcFolderFrag = compilerJavaProject.getPackageFragmentRoot(sourceFolder);
-//			val IPackageFragmentRoot genFolderFrag = compilerJavaProject.getPackageFragmentRoot(genFolder);
-//			val IPackageFragmentRoot metaFolderFrag = compilerJavaProject.getPackageFragmentRoot(metaFolder);
-//			
-		var IClasspathEntry[] oldEntries = compilerJavaProject.getRawClasspath();
-		val ArrayList<IClasspathEntry> oldEntriesMod = new ArrayList<IClasspathEntry>(oldEntries);	// dirty!... make list changeable
-		
-		// is the root folder already a source folder? if yes, remove it
-//			for(val Iterator<IClasspathEntry> it = oldEntriesMod.iterator; it.hasNext;) {
-//				val entry = it.next
-//				if(entry.contentKind == IPackageFragmentRoot.K_SOURCE && entry.entryKind == IClasspathEntry.CPE_SOURCE) {
-//					// this is the source container entry for the project root
-//					// remove this entry
-//					it.remove
-//					
-//				}
-//			}
-		
-		oldEntries = oldEntriesMod;
-		
-		val IClasspathEntry[] newEntries = newArrayOfSize(oldEntries.length + 3);
-		System.arraycopy(oldEntries, 0, newEntries, 0, oldEntries.length);
-//			newEntries.set(oldEntries.length, JavaCore.newSourceEntry(srcFolderFrag.getPath(), null));
-//			newEntries.set(oldEntries.length + 1, JavaCore.newSourceEntry(genFolderFrag.getPath(), null));
-//			newEntries.set(oldEntries.length + 2, JavaCore.newSourceEntry(metaFolderFrag.getPath(), null));
-//			compilerJavaProject.setRawClasspath(newEntries, progressMonitor);
 	
 		return compilerProject
 	}
