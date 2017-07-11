@@ -3,12 +3,9 @@ package src;
 import gen.RuleProviderBase;
 import javax.swing.JOptionPane;
 
-import edu.kit.ipd.sdq.kamp4bp.core.BPArchitectureVersion;
-import edu.kit.ipd.sdq.kamp4bp.ruledsl.support.IRule;
-import edu.kit.ipd.sdq.kamp4is.core.AbstractISChangePropagationAnalysis;
-import edu.kit.ipd.sdq.kamp4is.core.ISArchitectureVersion;
-import edu.kit.ipd.sdq.kamp4is.model.modificationmarks.ISChangePropagationDueToDataDependencies;
-
+import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion;
+import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 
 public class RuleProviderImpl extends RuleProviderBase {
 	@Override

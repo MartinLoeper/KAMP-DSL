@@ -262,13 +262,17 @@ class KampRuleLanguageGenerator implements IGenerator {
 			//requiredBundles.add("edu.kit.ipd.sdq.kamp4bp")
 			
 			// add the kamp packages here because we should resolve the bin folder dependencies via import not require
+			// ruledsl
 			importedPackages.add("edu.kit.ipd.sdq.kamp.ruledsl.support");
+			
+			// kamp core
 			importedPackages.add("edu.kit.ipd.sdq.kamp.propagation");
-			importedPackages.add("edu.kit.ipd.sdq.kamp4bp.core");	
-			importedPackages.add("edu.kit.ipd.sdq.kamp4is.core")
-			importedPackages.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
 			importedPackages.add("edu.kit.ipd.sdq.kamp.architecture")
 			importedPackages.add("edu.kit.ipd.sdq.kamp.model.modificationmarks");
+			
+//			importedPackages.add("edu.kit.ipd.sdq.kamp4bp.core");	
+//			importedPackages.add("edu.kit.ipd.sdq.kamp4is.core")
+//			importedPackages.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
 			
 			var String lastLine = null;
 			if(preserveLastLine) {
