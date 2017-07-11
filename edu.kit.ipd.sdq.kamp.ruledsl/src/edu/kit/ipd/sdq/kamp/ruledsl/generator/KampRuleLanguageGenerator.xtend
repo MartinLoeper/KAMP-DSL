@@ -52,6 +52,8 @@ import tools.vitruv.framework.util.bridges.EclipseBridge
 
 import static edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil.*
 import java.io.FileNotFoundException
+import org.eclipse.emf.common.util.EList
+import org.eclipse.emf.ecore.EObject
 
 class KampRuleLanguageGenerator implements IGenerator {
 	
@@ -141,15 +143,14 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   	if(reload) {
 				   		project = getProject(causingProjectName)
 				   		removeGeneratedFolderContents(project, subMonitor.split(1));
-				   		createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1), true)			   	
 				   	} else {
 				   		subMonitor.split(1).beginTask("Create plugin project", 1);
 				   		project = createProject(subMonitor.split(1), causingProjectName);
 				   		createService(project, subMonitor.split(1))
 				   		createPluginXml(project, subMonitor.split(1));
-				   		createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1), false)
 				   	}
 				   		
+				   	createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1), resource.contents)	
 				    createActivator(project, subMonitor.split(1), ruleFile)
 					createServiceBase(project, subMonitor.split(1));
 					//createStartupRegistry(project, subMonitor.split(1));
@@ -228,75 +229,99 @@ class KampRuleLanguageGenerator implements IGenerator {
 		}
 	}	
 	
-	def createManifest(String projectName, IProject project, Set<String> packageUris,  IProgressMonitor monitor, boolean preserveLastLine) {
-			val Set<String> requiredBundles = newHashSet
-			val Set<String> importedPackages = newHashSet
-			val List<String> exportedPackages = newArrayList
+	def createManifest(String projectName, IProject project, Set<String> packageUris,  IProgressMonitor monitor, EList<EObject> rootEObject) {
+		val Set<String> requiredBundles = newHashSet
+		val Set<String> importedPackages = newHashSet
+		val List<String> exportedPackages = newArrayList
 
-			// export the default bundle
-			exportedPackages.add( "." )
-			
-			// search for imported models
-			var registry = EPackage.Registry.INSTANCE;
-			for (String nsUri : new HashSet<String>(registry.keySet())) {
+		// export the default bundle
+		exportedPackages.add( "." )
+		
+		// search for imported models
+		var registry = EPackage.Registry.INSTANCE;
+		for (String nsUri : new HashSet<String>(registry.keySet())) {
+		    for(packageUri : packageUris) {
+			    if(nsUri.equals(packageUri)) {
+			    	// taken from MirBaseQuickFixProvider
+			    	val String contributorName = EclipseBridge.getNameOfContributorOfExtension("org.eclipse.emf.ecore.generated_package", "uri", nsUri)
+			   		if(contributorName !== null) 
+			   			requiredBundles.add(contributorName)
+			    }
+		    }
+		}
+		
+		requiredBundles.add("org.eclipse.ui");
+		requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
+		requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
+		//requiredBundles.add("edu.kit.ipd.sdq.kamp.model.modificationmarks")
+		//requiredBundles.add("edu.kit.ipd.sdq.kamp4is")
+		//requiredBundles.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
+		//requiredBundles.add("edu.kit.ipd.sdq.kamp")
+		//requiredBundles.add("edu.kit.ipd.sdq.kamp4bp")
+		
+		// add the kamp packages here because we should resolve the bin folder dependencies via import not require
+		// ruledsl
+		importedPackages.add("edu.kit.ipd.sdq.kamp.ruledsl.support");
+		
+		// kamp core
+		importedPackages.add("edu.kit.ipd.sdq.kamp.propagation");
+		importedPackages.add("edu.kit.ipd.sdq.kamp.architecture")
+		importedPackages.add("edu.kit.ipd.sdq.kamp.model.modificationmarks");
+		
+//		importedPackages.add("edu.kit.ipd.sdq.kamp4bp.core");	
+//		importedPackages.add("edu.kit.ipd.sdq.kamp4is.core")
+//		importedPackages.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
+		
+//		val IFolder metaFolder = project.getFolder("META-INF");
+//		if(metaFolder.exists) {
+//			val IFile metaFile = metaFolder.getFile("MANIFEST.MF"); 
+//			if(metaFile.exists) {
+//				val is = metaFile.contents;
+//				val reader = new BufferedReader(new InputStreamReader(is));
 //				try {
-//				    var ePackage = registry.getEPackage(key);
-				    for(packageUri : packageUris) {
-					    if(nsUri.equals(packageUri)) {
-//					    	// taken from MirBaseQuickFixProvider
-					    	val String contributorName = EclipseBridge.getNameOfContributorOfExtension("org.eclipse.emf.ecore.generated_package", "uri", nsUri)
-					   		if(contributorName !== null) 
-					   			requiredBundles.add(contributorName)
-					    }
-				    }
-//				} catch(NoClassDefFoundError e) { } catch(ExceptionInInitializerError e2) {};
-			}
-			
-			requiredBundles.add("org.eclipse.ui");
-			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
-			requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
-			//requiredBundles.add("edu.kit.ipd.sdq.kamp.model.modificationmarks")
-			//requiredBundles.add("edu.kit.ipd.sdq.kamp4is")
-			//requiredBundles.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
-			//requiredBundles.add("edu.kit.ipd.sdq.kamp")
-			//requiredBundles.add("edu.kit.ipd.sdq.kamp4bp")
-			
-			// add the kamp packages here because we should resolve the bin folder dependencies via import not require
-			// ruledsl
-			importedPackages.add("edu.kit.ipd.sdq.kamp.ruledsl.support");
-			
-			// kamp core
-			importedPackages.add("edu.kit.ipd.sdq.kamp.propagation");
-			importedPackages.add("edu.kit.ipd.sdq.kamp.architecture")
-			importedPackages.add("edu.kit.ipd.sdq.kamp.model.modificationmarks");
-			
-//			importedPackages.add("edu.kit.ipd.sdq.kamp4bp.core");	
-//			importedPackages.add("edu.kit.ipd.sdq.kamp4is.core")
-//			importedPackages.add("edu.kit.ipd.sdq.kamp4is.model.modificationmarks")
-			
-			var String lastLine = null;
-			if(preserveLastLine) {
-				val IFolder metaFolder = project.getFolder("META-INF");
-				if(metaFolder.exists) {
-					val IFile metaFile = metaFolder.getFile("MANIFEST.MF"); 
-					if(metaFile.exists) {
-						val is = metaFile.contents;
-						val reader = new BufferedReader(new InputStreamReader(is));
-						try {
-							val String contents = reader.lines().collect(Collectors.joining("\n"));
-							lastLine = contents.substring(contents.lastIndexOf("\n") + 1) + "\n"
-						} finally {
-							if(reader !== null)
-								try { reader.close } catch(IOException e) {}
-								
-							if(is !== null)
-								try { is.close } catch(IOException e) {}
-						}
-					}
+//					val String contents = reader.lines().collect(Collectors.joining("\n"));
+//					lastLine = contents.substring(contents.lastIndexOf("\n") + 1) + "\n"
+//				} finally {
+//					if(reader !== null)
+//						try { reader.close } catch(IOException e) {}
+//						
+//					if(is !== null)
+//						try { is.close } catch(IOException e) {}
+//				}
+//			}
+//		}
+
+		
+		// include the user defined import statements
+		if(rootEObject.size > 0) {
+			val cRuleFile = rootEObject.get(0);
+			if(cRuleFile instanceof RuleFile) {
+				for(importStatement : cRuleFile.javaPackageImports) {
+					importedPackages.add(importStatement.javaType);
 				}
-			} 
+			}
+		}
+
+		// include the predefined import statements
+		val StringBuilder importStringBuilder = new StringBuilder();
+		if(importedPackages.size > 0)
+			importStringBuilder.append("Import-Package: ");
+		var int k = 0;
+		for (String entry : importedPackages) {
+			if(k != 0) {
+				importStringBuilder.append(",");
+			}
+			importStringBuilder.append(entry);
+			k++;
+		}
+		importStringBuilder.append("\n");
+		
+		var String importString = null;
+		if(importStringBuilder.length  > 0) {
+			importString = importStringBuilder.toString;
+		}			 
 			
-			createManifest(projectName, requiredBundles, importedPackages, exportedPackages, monitor, project, lastLine);
+		createManifest(projectName, requiredBundles, importedPackages, exportedPackages, monitor, project, importString);
 	}
 	
 	def createProject(IProgressMonitor progressMonitor, String name) {
@@ -452,10 +477,10 @@ class KampRuleLanguageGenerator implements IGenerator {
 			List<String> exportedPackages, IProgressMonitor progressMonitor, IProject project, String lastLine)
 	throws CoreException {
 		val StringBuilder maniContent = new StringBuilder("Manifest-Version: 1.0\n");
-		maniContent.append("Comment: Do NOT MODIFY THIS FILE, except for the last Import-Package line\n")
-		maniContent.append("See-Second-Line-Heads-Up: \n");
-		maniContent.append("See-Second-Line-Caution: \n");
-		maniContent.append("See-Second-Line-Attention: \n");
+		maniContent.append("Comment: Do NOT MODIFY THIS FILE, use import-package in .karl file for dependencies\n")
+//		maniContent.append("See-Second-Line-Heads-Up: \n");
+//		maniContent.append("See-Second-Line-Caution: \n");
+//		maniContent.append("See-Second-Line-Attention: \n");
 		maniContent.append("Bundle-ManifestVersion: 2\n");
 		maniContent.append("Bundle-Name: " + projectName + "\n");
 		maniContent.append("Bundle-SymbolicName: " + projectName + "; singleton:=true\n");
@@ -489,19 +514,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		maniContent.append("Bundle-RequiredExecutionEnvironment: J2SE-1.5\r\n");
 		
 		// add package imports
-		if(lastLine === null) {
-			if(importedPackages.size > 0)
-				maniContent.append("Import-Package: ");
-			var int k = 0;
-			for (String entry : importedPackages) {
-				if(k != 0) {
-					maniContent.append(",");
-				}
-				maniContent.append(entry);
-				k++;
-			}
-			maniContent.append("\n");
-		} else {
+		if(lastLine !== null) {
 			// the last line of the manifest was supplied by the caller
 			maniContent.append(lastLine);
 		}

@@ -3,6 +3,8 @@
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="kampRuleLanguage" nsURI="http://www.kit.edu/ipd/sdq/kamp/ruledsl/KampRuleLanguage"
     nsPrefix="kampRuleLanguage">
   <eClassifiers xsi:type="ecore:EClass" name="RuleFile" eSuperTypes="platform:/resource/tools.vitruv.dsls.mirbase/model/generated/MirBase.ecore#//MirBaseFile">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="javaPackageImports" upperBound="-1"
+        eType="#//JavaImport" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="rules" upperBound="-1"
         eType="#//KampRule" containment="true"/>
   </eClassifiers>
@@ -19,4 +21,7 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ForwardEReference" eSuperTypes="#//PropagationReference"/>
   <eClassifiers xsi:type="ecore:EClass" name="BackwardEReference" eSuperTypes="#//PropagationReference platform:/resource/tools.vitruv.dsls.mirbase/model/generated/MirBase.ecore#//MetaclassReference"/>
+  <eClassifiers xsi:type="ecore:EClass" name="JavaImport">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="javaType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
 </ecore:EPackage>

@@ -7,6 +7,7 @@
   <genPackages prefix="KampRuleLanguage" basePackage="edu.kit.ipd.sdq.kamp.ruledsl"
       disposableProviderFactory="true" fileExtensions="karl" ecorePackage="KampRuleLanguage.ecore#/">
     <genClasses ecoreClass="KampRuleLanguage.ecore#//RuleFile">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//RuleFile/javaPackageImports"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//RuleFile/rules"/>
     </genClasses>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//KampRule">
@@ -20,5 +21,8 @@
     </genClasses>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//ForwardEReference"/>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//BackwardEReference"/>
+    <genClasses ecoreClass="KampRuleLanguage.ecore#//JavaImport">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute KampRuleLanguage.ecore#//JavaImport/javaType"/>
+    </genClasses>
   </genPackages>
 </genmodel:GenModel>
