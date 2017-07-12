@@ -28,7 +28,7 @@ public abstract class RuleProviderBase implements IRuleProvider {
 				cRule.apply(version, changePropagationAnalysis);
 			} catch(Exception e) {
 				e.printStackTrace();
-				Display.getDefault().asyncExec(new Runnable() {
+				Display.getDefault().syncExec(new Runnable() {
 				    public void run() {
 				    	MultiStatus status = Activator.createMultiStatus(e.getLocalizedMessage(), e);
 						Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();

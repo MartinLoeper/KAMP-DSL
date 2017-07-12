@@ -32,7 +32,7 @@ final class KampRuleLanguageEcoreUtil {
 	
 	def static dispatch EClass getMetaclass(BackwardEReference ref) {
 		// TODO is this cast risky?? which of those subclasses of eclassifier is possible? EClassifierImpl, EClassImpl, EDataTypeImpl, EEnumImpl
-		ref.feature.EType as EClass;
+		ref.mclass.metaclass as EClass;
 	}
 	
 	/**

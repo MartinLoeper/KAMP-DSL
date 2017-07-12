@@ -153,6 +153,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   	createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1), resource.contents)	
 				    createActivator(project, subMonitor.split(1), ruleFile)
 					createServiceBase(project, subMonitor.split(1));
+					// createLookupUtil(project, subMonitor.split(1));	// moved into ruledsl
 					//createStartupRegistry(project, subMonitor.split(1));
 				   	
 				   	// the following line is not needed anymore as we have a custom FileSystemAccess right now
@@ -251,6 +252,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		}
 		
 		requiredBundles.add("org.eclipse.ui");
+		requiredBundles.add("org.eclipse.emf.compare");
 		requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
 		requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
 		//requiredBundles.add("edu.kit.ipd.sdq.kamp.model.modificationmarks")
@@ -266,6 +268,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 		// kamp core
 		importedPackages.add("edu.kit.ipd.sdq.kamp.propagation");
 		importedPackages.add("edu.kit.ipd.sdq.kamp.architecture")
+		importedPackages.add("edu.kit.ipd.sdq.kamp.util");
 		importedPackages.add("edu.kit.ipd.sdq.kamp.model.modificationmarks");
 		
 //		importedPackages.add("edu.kit.ipd.sdq.kamp4bp.core");	
@@ -669,6 +672,17 @@ class KampRuleLanguageGenerator implements IGenerator {
 		try {
 			in = bundle.getEntry("resources/RuleProviderBase.java").openStream;        
 			pluginProject.getFolder("gen").getFile("RuleProviderBase.java").create(in, false, monitor)
+		} finally {
+			try { if(in !== null) in.close(); } finally {}
+		}
+    }
+    
+    def createLookupUtil(IProject pluginProject, IProgressMonitor monitor) {
+    	val Bundle bundle = FrameworkUtil.getBundle(class);
+        var InputStream in = null;
+		try {
+			in = bundle.getEntry("resources/LookupUtil.java").openStream;        
+			pluginProject.getFolder("gen").getFile("LookupUtil.java").create(in, false, monitor)
 		} finally {
 			try { if(in !== null) in.close(); } finally {}
 		}

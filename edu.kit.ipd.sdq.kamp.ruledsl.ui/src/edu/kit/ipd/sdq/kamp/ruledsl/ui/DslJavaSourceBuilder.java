@@ -19,9 +19,9 @@ import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkUtil;
 
-import edu.kit.ipd.sdq.kamp.ruledsl.ErrorHandlingUtil; 
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageFacade;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil;
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorHandlingUtil;
 
 public class DslJavaSourceBuilder extends IncrementalProjectBuilder {
 	 

@@ -28,6 +28,8 @@ import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
+import edu.kit.ipd.sdq.kamp.util.LookupUtil
+import org.eclipse.emf.common.util.EList
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -93,8 +95,11 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				applyMethod.annotations += annotationRef(Override)
 			
 				try {
-					val lookupMethod = rule.toMethod(rule.getLookupMethodName(rule.lookups.last), typeRef(Set)) [
+					val lookupMethod = rule.toMethod(rule.getLookupMethodName(rule.lookups.last), null) [
 					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))		
+					if(rule.isVersionParameterRequired()) {
+						parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion))
+					}
 	
 					nameForLookup.put(null, "input")
 					body = '''
@@ -110,8 +115,10 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 						return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
 					'''
 				];
-				// TODO make this work!!
-				lookupMethod.returnType = Set.typeRef()	// rule.returnType.instanceTypeName.typeRef()				
+				// TODO make this work with generics!!
+				//lookupMethod.returnType = Set.typeRef(typeRef(getReturnType(rule.lookups.last)))	// rule.returnType.instanceTypeName.typeRef()				
+				lookupMethod.returnType = Set.typeRef()
+				lookupMethod.static = true;
 				theClass.members += lookupMethod	
 			} catch(Exception e) {
 				e.printStackTrace
@@ -123,6 +130,16 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		]);
 	}
 	
+	def String getReturnType(Lookup lastLookup) {
+		if(lastLookup instanceof ForwardEReference) {
+			lastLookup.metaclass.instanceTypeName
+		} else if(lastLookup instanceof BackwardEReference) {
+			lastLookup.mclass.metaclass.instanceTypeName
+		} else {
+			Object.canonicalName
+		}
+	}
+	
 	def dispatch String getLookupMethodName(KampRule rule, Lookup lookup) {
 		'lookup'
 	}
@@ -132,12 +149,12 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	}
 	
 	def dispatch String getLookupMethodName(KampRule rule, BackwardEReference reference) {
-		'lookup' + reference.feature.EType + 'from' + rule.source.metaclass.name
+		'lookup' + reference.mclass.metaclass.name.toFirstUpper + 'from' + rule.source.metaclass.name
 	}
 	
-	def EClass getReturnType(KampRule rule) {
-		return rule.lookups.last.getMetaclass
-	}
+//	def EClass getReturnType(KampRule rule) {
+//		return rule.lookups.last.getMetaclass
+//	}
 	
 	// this one is the entry point and must address the interface method which must be overridden
 	def String getMethodName() {
@@ -163,6 +180,8 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		'''// rule: «lookup?.toString», pre: «getPreviousSiblingOfType(lookup, Lookup)?.toString»'''
 	}
 	
+	// TODO changeVarName!!!!!!!!!!!!!!! There might be multiple variables with the same name...
+	
 	/**
 	 * @see #generateCodeForRule(Lookup, JvmGenericType)
 	 */
@@ -184,12 +203,16 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 * @see #generateCodeForRule(Lookup, JvmGenericType)
 	 */
 	def dispatch generateCodeForRule(BackwardEReference ref, JvmGenericType typeToAddTo) {
-		var varName = '''backmarked«ref.metaclass.name.toFirstUpper»'''
+		var varName = '''backmarked«ref.mclass.metaclass.name.toFirstUpper»'''
 		nameForLookup.put(ref, varName)
 		
 		'''
-			Stream<«ref.metaclass.instanceTypeName»> «varName» = null;
-			// iterate over all resources and filter stuff out
+			Stream<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, input).stream();
+			
 		'''
+	}
+	
+	def isVersionParameterRequired(KampRule rule) {
+		rule.lookups.exists[r | r instanceof BackwardEReference];	
 	}
 }

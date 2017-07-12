@@ -1,4 +1,4 @@
-package edu.kit.ipd.sdq.kamp.ruledsl;
+package edu.kit.ipd.sdq.kamp.ruledsl.util;
 
 import java.util.ArrayList;
 import java.util.List;

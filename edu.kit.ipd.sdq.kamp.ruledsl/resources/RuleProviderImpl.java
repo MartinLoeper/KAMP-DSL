@@ -6,6 +6,7 @@ import javax.swing.JOptionPane;
 import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion;
 import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
+import edu.kit.ipd.sdq.kamp.util.LookupUtil;
 
 public class RuleProviderImpl extends RuleProviderBase {
 	@Override

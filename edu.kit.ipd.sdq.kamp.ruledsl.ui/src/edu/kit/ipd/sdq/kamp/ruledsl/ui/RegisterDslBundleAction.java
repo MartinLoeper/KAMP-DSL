@@ -19,10 +19,10 @@ import org.eclipse.ui.progress.IProgressService;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkUtil;
 
-import edu.kit.ipd.sdq.kamp.ruledsl.ErrorHandlingUtil;
 import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageFacade;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil;
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorHandlingUtil;
 import edu.kit.ipd.sdq.kamp.util.FileAndFolderManagement;
 
 public class RegisterDslBundleAction implements IActionDelegate {
