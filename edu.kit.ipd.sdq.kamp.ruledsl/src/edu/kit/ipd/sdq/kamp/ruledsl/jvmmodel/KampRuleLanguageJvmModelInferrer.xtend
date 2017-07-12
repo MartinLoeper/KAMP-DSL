@@ -30,6 +30,7 @@ import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
 import edu.kit.ipd.sdq.kamp.util.LookupUtil
 import org.eclipse.emf.common.util.EList
+import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -84,6 +85,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 							
 				val applyMethod = rule.toMethod(getMethodName(), typeRef("void")) [
 					parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion))
+					parameters += rule.toParameter("registry", typeRef(ChangePropagationStepRegistry))
 					parameters += rule.toParameter("changePropagationAnalysis", typeRef(AbstractChangePropagationAnalysis))
 					
 					nameForLookup.put(null, "input")
@@ -93,6 +95,8 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				];
 				
 				applyMethod.annotations += annotationRef(Override)
+				// TODO remove after the wildcard issue is fixed
+				applyMethod.annotations += annotationRef(SuppressWarnings, "rawtypes")
 			
 				try {
 					val lookupMethod = rule.toMethod(rule.getLookupMethodName(rule.lookups.last), null) [

@@ -11,6 +11,7 @@ import org.eclipse.ui.PlatformUI;
 
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry;
 import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis;
 import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion;
 
@@ -19,13 +20,13 @@ public abstract class RuleProviderBase implements IRuleProvider {
 	private Collection<IRule> rules = new HashSet<>();
 	
 	@Override
-	public final void applyAllRules(AbstractArchitectureVersion version, AbstractChangePropagationAnalysis changePropagationAnalysis) {
+	public final void applyAllRules(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry, AbstractChangePropagationAnalysis changePropagationAnalysis) {
 		System.out.println("Applying all custom dsl rules...");
 		
 		for(IRule cRule : this.rules) {
 			System.out.println("Running rule: " + cRule.getClass().toString());
 			try {
-				cRule.apply(version, changePropagationAnalysis);
+				cRule.apply(version, registry, changePropagationAnalysis);
 			} catch(Exception e) {
 				e.printStackTrace();
 				Display.getDefault().syncExec(new Runnable() {
