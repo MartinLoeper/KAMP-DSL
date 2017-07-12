@@ -27,7 +27,7 @@ The old SVN Repository URL is: https://svnserver.informatik.kit.edu/i43/svn/code
 - If you get an invalid Manifest Header Exception in the inner Eclipse, navigate into the inner Eclipse Workspace and into your Project -> META-INF -> MANIFEST.MF and remove trailing commas for *Require-Bundle:* attribute
 
 ## DSL Editor Requirements
-- the KAMP project needs the Java nature and JRE on classpath
+- the KAMP project needs the Java nature and JRE on classpath AND the Plugin-Project Nature
 - possibly even a JDK  is necessary as we are using JDT to compile the Eclipse Plugin Project
 - the MANIFEST.mf file must import all necessary models which are referenced from .karl file via import (QuickFix available) as required bundles
 - the MANIFEST.mf file must import all Java classes which are referenced by KampRuleLanguageJvmModelInferrer as required bundles
