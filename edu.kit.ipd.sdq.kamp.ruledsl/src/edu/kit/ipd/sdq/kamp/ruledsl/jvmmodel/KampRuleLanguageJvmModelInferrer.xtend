@@ -91,10 +91,11 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				];
 				
 				applyMethod.annotations += annotationRef(Override)
-				
-				val lookupMethod = rule.toMethod(rule.lookupMethodName, typeRef(Set)) [
+			
+				try {
+					val lookupMethod = rule.toMethod(rule.getLookupMethodName(rule.lookups.last), typeRef(Set)) [
 					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))		
-
+	
 					nameForLookup.put(null, "input")
 					body = '''
 						«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
@@ -111,16 +112,28 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				];
 				// TODO make this work!!
 				lookupMethod.returnType = Set.typeRef()	// rule.returnType.instanceTypeName.typeRef()				
-				
-				theClass.members += applyMethod;
-				theClass.members += lookupMethod
-			]);
+				theClass.members += lookupMethod	
+			} catch(Exception e) {
+				e.printStackTrace
+				// TODO replace with proper exception handling
+				System.err.println("Rule could not be created. Not fully defined? Name: " + rule.name)
+			}	
+							
+			theClass.members += applyMethod;
+		]);
 	}
 	
-	def String getLookupMethodName(KampRule rule) {
-		'lookup' + rule.lookups.last.metaclass.name + 'from' + rule.source.metaclass.name
+	def dispatch String getLookupMethodName(KampRule rule, Lookup lookup) {
+		'lookup'
 	}
 	
+	def dispatch String getLookupMethodName(KampRule rule, ForwardEReference reference) {
+		'lookup' + reference.metaclass.name + 'from' + rule.source.metaclass.name
+	}
+	
+	def dispatch String getLookupMethodName(KampRule rule, BackwardEReference reference) {
+		'lookup' + reference.feature.EType + 'from' + rule.source.metaclass.name
+	}
 	
 	def EClass getReturnType(KampRule rule) {
 		return rule.lookups.last.getMetaclass

@@ -20,7 +20,10 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="feature" eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EStructuralFeature"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ForwardEReference" eSuperTypes="#//PropagationReference"/>
-  <eClassifiers xsi:type="ecore:EClass" name="BackwardEReference" eSuperTypes="#//PropagationReference platform:/resource/tools.vitruv.dsls.mirbase/model/generated/MirBase.ecore#//MetaclassReference"/>
+  <eClassifiers xsi:type="ecore:EClass" name="BackwardEReference" eSuperTypes="#//PropagationReference">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mclass" eType="ecore:EClass platform:/resource/tools.vitruv.dsls.mirbase/model/generated/MirBase.ecore#//MetaclassReference"
+        containment="true"/>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="JavaImport">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="javaType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
