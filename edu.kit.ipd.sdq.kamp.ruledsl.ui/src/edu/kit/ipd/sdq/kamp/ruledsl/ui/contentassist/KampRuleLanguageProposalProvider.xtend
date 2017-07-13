@@ -23,6 +23,8 @@ import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRuleLanguageFactory
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRuleLanguagePackage
 import org.eclipse.emf.ecore.EcoreFactory
 import edu.kit.ipd.sdq.kamp.model.modificationmarks.ChangePropagationStep
+import org.eclipse.jdt.core.Flags;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
 
 /**
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#content-assist
@@ -65,7 +67,7 @@ class KampRuleLanguageProposalProvider extends AbstractKampRuleLanguageProposalP
 	    if (EcoreUtil2.getContainerOfType(model, ModificationMark) !== null) {
             val IJvmTypeProvider jvmTypeProvider = jvmTypeProviderFactory.createTypeProvider(model.eContainer.eResource().getResourceSet());
             val JvmType interfaceToImplement = jvmTypeProvider.findTypeByName(EFactory.getName());
-            typeProposalProvider.createSubTypeProposals(interfaceToImplement, this, context, KampRuleLanguagePackage.Literals.MODIFICATION_MARK__TYPE, TypeMatchFilters.public, acceptor);
+            typeProposalProvider.createSubTypeProposals(interfaceToImplement, this, context, KampRuleLanguagePackage.Literals.MODIFICATION_MARK__TYPE, new IsInterface(), acceptor);
         } else {
             super.completeJvmParameterizedTypeReference_Type(model, assignment, context, acceptor);
         }
@@ -75,7 +77,7 @@ class KampRuleLanguageProposalProvider extends AbstractKampRuleLanguageProposalP
 		if (EcoreUtil2.getContainerOfType(model, ModificationMark) !== null) {
             val IJvmTypeProvider jvmTypeProvider = jvmTypeProviderFactory.createTypeProvider(model.eContainer.eResource().getResourceSet());
             val JvmType interfaceToImplement = jvmTypeProvider.findTypeByName(ChangePropagationStep.getName());
-            typeProposalProvider.createSubTypeProposals(interfaceToImplement, this, context, KampRuleLanguagePackage.Literals.MODIFICATION_MARK__TYPE, TypeMatchFilters.public, acceptor);
+            typeProposalProvider.createSubTypeProposals(interfaceToImplement, this, context, KampRuleLanguagePackage.Literals.MODIFICATION_MARK__TYPE, new IsInterface(), acceptor);
         } else {
             super.completeJvmParameterizedTypeReference_Type(model, assignment, context, acceptor);
         }
@@ -95,5 +97,16 @@ class KampRuleLanguageProposalProvider extends AbstractKampRuleLanguageProposalP
 			}
 		}
 	}
-	
+
+	public static class IsInterface implements ITypesProposalProvider.Filter {
+		override accept(int modifiers, char[] packageName, char[] simpleTypeName,
+				char[][] enclosingTypeNames, String path) {
+
+			return Flags.isInterface(modifiers);
+		}
+		
+		override getSearchFor() {
+			return IJavaSearchConstants.INTERFACE;
+		}
+	}	
 }

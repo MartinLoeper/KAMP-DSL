@@ -27,7 +27,8 @@ Require-Bundle: edu.kit.ipd.sdq.kamp.ruledsl,
  edu.kit.ipd.sdq.kamp,
  org.eclipse.swt,
  org.eclipse.core.runtime,
- org.eclipse.core.resources
+ org.eclipse.core.resources,
+ org.eclipse.jdt.core;bundle-version="3.12.3"
 Import-Package: edu.kit.ipd.sdq.kamp.model.modificationmarks,
  org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
