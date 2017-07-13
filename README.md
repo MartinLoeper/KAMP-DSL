@@ -5,6 +5,11 @@ It was created in the course of student assistant activity at the Karlsruhe Inst
 The old SVN Repository URL is: https://svnserver.informatik.kit.edu/i43/svn/code/Palladio/Addons/KAMPIntBIISRequirements/branches/generalized-KAMP-rule-generalization/KAMPRuleLanguage/
 
 ## Install
+
+**There is a an installer available now! Please visit: [KAMP-DSL-Installer](https://github.com/MartinLoeper/KAMP-DSL-Installer)**
+
+If you want to install everything manually, please follow this guide:
+
 - Download and Install [Eclipse IDE for Java Developers](http://www.eclipse.org/downloads/packages/eclipse-ide-java-developers/oxygenr)
 - Change file encoding to UTF-8: Window -> Preferences -> General -> Workspace : Text file encoding
 - Download and Install as Eclipse Extension: [Eclipse Modeling Framework](http://www.eclipse.org/downloads/packages/eclipse-modeling-tools/neon3)
