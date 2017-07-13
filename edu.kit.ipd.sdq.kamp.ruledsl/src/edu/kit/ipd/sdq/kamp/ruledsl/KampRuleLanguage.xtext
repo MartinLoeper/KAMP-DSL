@@ -22,7 +22,7 @@ KampRule:
 ;
 
 ModificationMark:
-	'insert' type=[jvmTypes::JvmType|QualifiedName] '#' memberRef=ID 'into' target=[jvmTypes::JvmType|QualifiedName] ';'
+	'insert' type=[jvmTypes::JvmType|QualifiedName] '#' memberRef=ID 'into' target=[jvmTypes::JvmType|QualifiedName] '#' targetMethod=ID ';'
 ;
 
 Lookup:

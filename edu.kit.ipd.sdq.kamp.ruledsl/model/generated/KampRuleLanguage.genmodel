@@ -20,6 +20,7 @@
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//ModificationMark/type"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute KampRuleLanguage.ecore#//ModificationMark/memberRef"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//ModificationMark/target"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute KampRuleLanguage.ecore#//ModificationMark/targetMethod"/>
     </genClasses>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//Lookup"/>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//PropagationReference">

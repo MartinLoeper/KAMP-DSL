@@ -102,7 +102,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 									} else if(changePropagationSteps.size() > 1) {
 										throw new UnsupportedOperationException("There is more than one candidate supplied for the selected ChangePropagationStep. Please make a more specific selection.");
 									} else {
-										changePropagationSteps.iterator().next().getAbstractUserActionModifications().add(«ModificationMarkCreationUtil».createModificationMark(result, «rule.modificationMark.type.qualifiedName».eINSTANCE.«rule.modificationMark.memberRef»()));
+										changePropagationSteps.iterator().next().«rule.modificationMark.targetMethod»().add(«ModificationMarkCreationUtil».createModificationMark(result, «rule.modificationMark.type.qualifiedName».eINSTANCE.«rule.modificationMark.memberRef»()));
 									}
 								});
 						'''

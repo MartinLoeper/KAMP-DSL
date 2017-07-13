@@ -81,4 +81,19 @@ class KampRuleLanguageProposalProvider extends AbstractKampRuleLanguageProposalP
         }
 	}
 	
+	override completeModificationMark_TargetMethod(EObject model, Assignment assignment, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		super.completeRuleCall(assignment.getTerminal() as RuleCall, context, acceptor);
+		
+		if(model instanceof ModificationMark) {
+			if(model.target !== null && model.target instanceof JvmGenericType) {
+				val JvmGenericType jvmGenType = model.target as JvmGenericType
+
+				for(JvmMember jvmMember : jvmGenType.getMembers()) {
+					if(jvmMember.getSimpleName().startsWith("get"))
+						acceptor.accept(createCompletionProposal(jvmMember.getSimpleName(), context)); 
+				}
+			}
+		}
+	}
+	
 }
