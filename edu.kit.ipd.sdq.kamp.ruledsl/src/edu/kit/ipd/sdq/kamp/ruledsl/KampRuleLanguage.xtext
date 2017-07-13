@@ -18,6 +18,11 @@ KampRule:
 	source=UnnamedMetaclassReference
 	(lookups+=Lookup)+
 	';'
+	(modificationMark=ModificationMark)?
+;
+
+ModificationMark:
+	'insert' type=[jvmTypes::JvmType|QualifiedName] '#' memberRef=ID 'into' target=[jvmTypes::JvmType|QualifiedName] ';'
 ;
 
 Lookup:

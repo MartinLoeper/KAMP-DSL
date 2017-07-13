@@ -17,17 +17,17 @@ import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion;
 
 public abstract class RuleProviderBase implements IRuleProvider {
 	
-	private Collection<IRule> rules = new HashSet<>();
+	private Collection<IRule> rules = new HashSet<IRule>();
 	
 	@Override
 	public final void applyAllRules(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry, AbstractChangePropagationAnalysis changePropagationAnalysis) {
 		System.out.println("Applying all custom dsl rules...");
 		
-		for(IRule cRule : this.rules) {
+		for(final IRule cRule : this.rules) {
 			System.out.println("Running rule: " + cRule.getClass().toString());
 			try {
 				cRule.apply(version, registry, changePropagationAnalysis);
-			} catch(Exception e) {
+			} catch(final Exception e) {
 				e.printStackTrace();
 				Display.getDefault().syncExec(new Runnable() {
 				    public void run() {

@@ -5,6 +5,7 @@ import javax.swing.JOptionPane;
 
 import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion;
 import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 import edu.kit.ipd.sdq.kamp.util.LookupUtil;
 
@@ -20,7 +21,7 @@ public class RuleProviderImpl extends RuleProviderBase {
 	 	override(new IRule() {
 	 	
 			@Override
-			public void apply(AbstractArchitectureVersion version, AbstractChangePropagationAnalysis changePropagationAnalysis) {
+			public void apply(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry, AbstractChangePropagationAnalysis changePropagationAnalysis) {
 				JOptionPane.showMessageDialog(null, "Custom rule is working!");
 			}
 		});

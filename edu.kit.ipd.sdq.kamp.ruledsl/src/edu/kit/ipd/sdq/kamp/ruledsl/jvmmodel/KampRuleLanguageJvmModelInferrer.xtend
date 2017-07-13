@@ -31,6 +31,8 @@ import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreU
 import edu.kit.ipd.sdq.kamp.util.LookupUtil
 import org.eclipse.emf.common.util.EList
 import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry
+import edu.kit.ipd.sdq.kamp.util.ModificationMarkCreationUtil
+import java.util.Collection
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -73,7 +75,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 *            <code>true</code>.
 	 */
 	def dispatch void infer(KampRule rule, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {		
-		val className = rule.name.toFirstUpper + "Rule";
+		val className = rule.getClassName();
 		val clazz = rule.toClass(className);
 		clazz.packageName = "gen.rule";
 		
@@ -89,9 +91,24 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					parameters += rule.toParameter("changePropagationAnalysis", typeRef(AbstractChangePropagationAnalysis))
 					
 					nameForLookup.put(null, "input")
-					body = '''
-						
-					'''
+					if(rule.modificationMark !== null) {
+						body = '''
+							«LookupUtil».lookupMarkedObjectsWithLookupMethod(version, «typeRef(rule.source.metaclass.instanceTypeName)».class, «getReturnType(rule.lookups.last)».class, «rule.getClassName»::«rule.getLookupMethodName(rule.lookups.last)»)
+								.forEach((result) -> {			 
+									«typeRef(Collection, typeRef(rule.modificationMark.target.qualifiedName))»changePropagationSteps = registry.getSubtypes(«rule.modificationMark.target.qualifiedName».class);
+									
+									if(changePropagationSteps.isEmpty()) {
+										throw new UnsupportedOperationException("The ChangePropagationAnalysis does not provide the requested ChangePropagationStep.");
+									} else if(changePropagationSteps.size() > 1) {
+										throw new UnsupportedOperationException("There is more than one candidate supplied for the selected ChangePropagationStep. Please make a more specific selection.");
+									} else {
+										changePropagationSteps.iterator().next().getAbstractUserActionModifications().add(«ModificationMarkCreationUtil».createModificationMark(result, «rule.modificationMark.type.qualifiedName».eINSTANCE.«rule.modificationMark.memberRef»()));
+									}
+								});
+						'''
+					} else {
+						body = ''''''
+					}
 				];
 				
 				applyMethod.annotations += annotationRef(Override)
@@ -132,6 +149,10 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 							
 			theClass.members += applyMethod;
 		]);
+	}
+	
+	def String getClassName(KampRule rule) {
+		return rule.name.toFirstUpper + "Rule"
 	}
 	
 	def String getReturnType(Lookup lastLookup) {

@@ -16,7 +16,6 @@ import tools.vitruv.dsls.mirbase.scoping.MirBaseScopeProviderDelegate
 import static tools.vitruv.dsls.mirbase.mirBase.MirBasePackage.Literals.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
-import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.ForwardEReference
 
 class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate {
 	override getScope(EObject context, EReference reference) {
@@ -27,8 +26,18 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 				(context as Lookup)?.previousMetaclass) 
 		else if (context instanceof Lookup && reference.class.isAssignableFrom(METACLASS_REFERENCE__METACLASS.class)) {
 			return createEReferenceScope((context as Lookup).previousMetaclass)
-		}
-		
+		} 
+//		else if(context instanceof ModificationMark && reference == KampRuleLanguagePackage.Literals.MODIFICATION_MARK__TYPE) {
+//			val mm = (context as ModificationMark)
+//			if(mm.type !== null && !(mm.type instanceof JvmVoid)) {				
+//				if(mm.type instanceof EFactory) {
+//					return super.getScope(context, reference)
+//				} else {
+//					return IScope.NULLSCOPE 
+//				}
+//			}
+//		}
+				
 		return super.getScope(context, reference)
 	}
 	

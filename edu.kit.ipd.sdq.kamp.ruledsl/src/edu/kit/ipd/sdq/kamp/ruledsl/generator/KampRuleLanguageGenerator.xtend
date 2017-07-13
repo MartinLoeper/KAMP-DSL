@@ -54,6 +54,11 @@ import static edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil.*
 import java.io.FileNotFoundException
 import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
+import java.util.jar.Manifest
+import java.util.jar.Attributes
+import java.io.OutputStreamWriter
+import java.io.OutputStream
+import java.io.ByteArrayOutputStream
 
 class KampRuleLanguageGenerator implements IGenerator {
 	
@@ -151,6 +156,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   	}
 				   		
 				   	createManifest(getBundleNameForProjectName(causingProjectName), project, packageUris, subMonitor.split(1), resource.contents)	
+				   	syncManifests(project, causingProjectName);
 				    createActivator(project, subMonitor.split(1), ruleFile)
 					createServiceBase(project, subMonitor.split(1));
 					// createLookupUtil(project, subMonitor.split(1));	// moved into ruledsl
@@ -203,6 +209,75 @@ class KampRuleLanguageGenerator implements IGenerator {
 			System.err.println("Cannot start rule creation job, because there is already one running.")
 		}
 	}	
+	
+	// syncs the MANIFEST imports from the parent kamp project and the rules project
+	def syncManifests(IProject project, String causingProject) {
+		var InputStream is = null;
+		var InputStream is2 = null;
+		try {
+			is = project.getFolder("META-INF").getFile("MANIFEST.MF").contents
+			val Manifest dslManifest = new Manifest(is);
+			val importedPackagesDsl = dslManifest.mainAttributes.getValue("Import-Package")?.split(",");
+			val requiredBundlesDsl = dslManifest.mainAttributes.getValue("Require-Bundle")?.split(",");
+
+			val parentProject = root.getProject(causingProject);
+			if(!parentProject.open) { 
+				parentProject.open(new NullProgressMonitor);
+			}
+			
+			is2 = parentProject.getFolder("META-INF").getFile("MANIFEST.MF").contents
+			val Manifest parentManifest = new Manifest(is2);
+			val importedPackagesParentProject = parentManifest.mainAttributes.getValue("Import-Package")?.split(",");
+			val requiredBundlesParentProject = parentManifest.mainAttributes.getValue("Require-Bundle")?.split(",");
+			
+			// add all imports and requires from rule project to parent project
+			val Set<String> mergedReqBundles = new HashSet<String>();
+			if(requiredBundlesParentProject !== null) {
+				for(String parentEntry : requiredBundlesParentProject) {
+					mergedReqBundles.add(parentEntry);
+				}	
+			}	
+			
+			if(requiredBundlesDsl !== null) {
+				for(String dslEntry : requiredBundlesDsl) {
+					mergedReqBundles.add(dslEntry);
+				}	
+			}	
+			
+			val Set<String> mergedImportedPackages = new HashSet<String>();
+			if(importedPackagesParentProject !== null) {
+				for(String parentEntry : importedPackagesParentProject) {
+					mergedImportedPackages.add(parentEntry);
+				}	
+			}	
+			
+			if(importedPackagesDsl !== null) {
+				for(String dslEntry : importedPackagesDsl) {
+					mergedImportedPackages.add(dslEntry);
+				}	
+			}
+			
+			parentManifest.mainAttributes.put(new Attributes.Name("Require-Bundle"), String.join(",", mergedReqBundles));
+			parentManifest.mainAttributes.put(new Attributes.Name("Import-Package"), String.join(",", mergedImportedPackages));
+			
+			try {
+				is2?.close
+				val ByteArrayOutputStream os = new ByteArrayOutputStream();
+				parentManifest.write(os);
+				val String newManifestAsString = new String(os.toByteArray(),"UTF-8");
+				os.close;
+				
+				val InputStream mis = new ByteArrayInputStream(newManifestAsString.getBytes(StandardCharsets.UTF_8));
+				parentProject.getFolder("META-INF").getFile("MANIFEST.MF").setContents(mis, true, true, new NullProgressMonitor)
+				mis?.close
+			} finally {
+				
+			}
+		} finally {
+			is?.close;
+			is2?.close
+		}
+	}
 	
 	def moveRuleSourceFiles(IProgressMonitor monitor, IProject destinationProject, URI[] sourceFiles, String[] jFileNames) {				
 		for(var int i = 0; i < sourceFiles.size; i++) {
