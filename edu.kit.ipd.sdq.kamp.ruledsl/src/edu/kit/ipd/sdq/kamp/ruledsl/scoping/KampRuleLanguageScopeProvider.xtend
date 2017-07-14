@@ -3,6 +3,8 @@
  */
 package edu.kit.ipd.sdq.kamp.ruledsl.scoping
 
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
 
 /**
  * This class contains custom scoping description.
@@ -12,4 +14,8 @@ package edu.kit.ipd.sdq.kamp.ruledsl.scoping
  */
 class KampRuleLanguageScopeProvider extends AbstractKampRuleLanguageScopeProvider {
 
+	override getScope(EObject context, EReference reference) {
+		super.getScope(context, reference)
+	}
+	
 }

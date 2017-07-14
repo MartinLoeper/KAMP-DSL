@@ -24,20 +24,15 @@ final class KampRuleLanguageEcoreUtil {
 	def static dispatch EClass getMetaclass(ForwardEReference ref) {
 		ref.feature.EType as EClass
 	}
-
-	/** see #getMetaclass(ForwardEReference) */
-//	def static dispatch EClass getMetaclass(CollectElements ref) {
-//		ref.feature.EType as EClass
-//	}
-	
-	/** see #getMetaclass(ForwardEReference) */
-	def static dispatch EClass getMetaclass(BackwardEReference ref) {
-		ref.feature.eContainer as EClass
-	}
 	
 	/** see #getMetaclass(ForwardEReference) */
 	def static dispatch EClass getMetaclass(MetaclassReference ref) {
 		ref.metaclass
+	}
+	
+	def static dispatch EClass getMetaclass(BackwardEReference ref) {
+		// TODO is this cast risky?? which of those subclasses of eclassifier is possible? EClassifierImpl, EClassImpl, EDataTypeImpl, EEnumImpl
+		ref.mclass.metaclass as EClass;
 	}
 	
 	/**
