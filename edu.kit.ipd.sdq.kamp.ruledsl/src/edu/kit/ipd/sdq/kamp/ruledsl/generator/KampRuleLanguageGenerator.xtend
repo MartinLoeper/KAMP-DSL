@@ -59,6 +59,9 @@ import java.util.jar.Attributes
 import java.io.OutputStreamWriter
 import java.io.OutputStream
 import java.io.ByteArrayOutputStream
+import edu.kit.ipd.sdq.kamp.ruledsl.RollbarExceptionReporting
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorContext
+import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting
 
 class KampRuleLanguageGenerator implements IGenerator {
 	
@@ -68,7 +71,7 @@ class KampRuleLanguageGenerator implements IGenerator {
 	private static final boolean DEBUG = true;
 	
        
-	override doGenerate(Resource resource, IFileSystemAccess fsa) {
+	override doGenerate(Resource resource, IFileSystemAccess fsa) {		
 		// delegate to Java generator in order to generate rule class files
 		jvmModelGenerator.doGenerate(resource, fsa)
 					
@@ -185,6 +188,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 				   
 				    Status.OK_STATUS
 				} catch(Exception e) {
+					RollbarExceptionReporting.INSTANCE.log(e, if (reload) ErrorContext.PROJECT_BUILD else ErrorContext.PROJECT_BUILD_INITIAL, null);
+				
 					// remove project if build was interrupted
 					if(!reload && !DEBUG) {
 						removeProject(getProject(causingProjectName), subMonitor);
@@ -483,6 +488,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 		try {
 			compilerJavaProject.setRawClasspath(entries, progressMonitor);
 		} catch(Exception e) {
+			RollbarExceptionReporting.INSTANCE.log(e, ErrorContext.PROJECT_BUILD_INITIAL, null);
+			
 			// on windows systems the file locking might prevent from update external folders, but we do not need this
 			e.printStackTrace
 		}
@@ -637,6 +644,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 			inputStream.close();
 		}
 		catch (Exception e) {
+			RollbarExceptionReporting.INSTANCE.log(e, ErrorContext.PROJECT_BUILD, null);
+				
 			e.printStackTrace
 		}
 		finally {
@@ -679,6 +688,8 @@ class KampRuleLanguageGenerator implements IGenerator {
 			stream.close();
 		}
 		catch (Exception e) {
+			RollbarExceptionReporting.INSTANCE.log(e, ErrorContext.PROJECT_BUILD, null);
+				
 			e.printStackTrace
 		}
 		progressMonitor.worked(1);

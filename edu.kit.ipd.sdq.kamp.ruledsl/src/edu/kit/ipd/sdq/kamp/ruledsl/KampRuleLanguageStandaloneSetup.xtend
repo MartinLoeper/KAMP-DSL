@@ -3,6 +3,8 @@
  */
 package edu.kit.ipd.sdq.kamp.ruledsl
 
+import com.google.inject.Inject
+
 /**
  * Initialization support for running Xtext languages without Equinox extension registry.
  */

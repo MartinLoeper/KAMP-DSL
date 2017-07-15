@@ -14,13 +14,20 @@ import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry;
 import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis;
 import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion;
+import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting;
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorContext;
 
 public abstract class RuleProviderBase implements IRuleProvider {
 	
 	private Collection<IRule> rules = new HashSet<IRule>();
+	private static final RollbarExceptionReporting REPORTING = RollbarExceptionReporting.INSTANCE;
 	
 	@Override
 	public final void applyAllRules(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry, AbstractChangePropagationAnalysis changePropagationAnalysis) {
+		if(!REPORTING.isInitialized()) {
+			REPORTING.init();
+		}
+		
 		System.out.println("Applying all custom dsl rules...");
 		
 		for(final IRule cRule : this.rules) {
@@ -28,7 +35,13 @@ public abstract class RuleProviderBase implements IRuleProvider {
 			try {
 				cRule.apply(version, registry, changePropagationAnalysis);
 			} catch(final Exception e) {
+				// send exception to our rollbar server for examination and bug tracking
+				REPORTING.log(e, ErrorContext.CUSTOM_RULE, null);
+				
+				// show the exception in the log
 				e.printStackTrace();
+				
+				// display message to user
 				Display.getDefault().syncExec(new Runnable() {
 				    public void run() {
 				    	MultiStatus status = Activator.createMultiStatus(e.getLocalizedMessage(), e);
@@ -53,6 +66,10 @@ public abstract class RuleProviderBase implements IRuleProvider {
 		for(IRule cRule : this.rules) {
 			if(cRule.getClass().isAssignableFrom(rule.getClass())) {
 				throw new IllegalStateException("There is already a supertype of the given class available, which is not allowed: " + cRule.getClass() + ". The rule will be omitted and registration does not continue.");
+			}
+			
+			if(rule.getClass().isAssignableFrom(cRule.getClass())) {
+				throw new IllegalStateException("There is already a special type of the given class available, which is not allowed: " + rule.getClass() + ". You must not insert a generalized type of a rule which is already registered. Subclass it instead! The rule will be omitted and registration does not continue.");
 			}
 		}
 		
