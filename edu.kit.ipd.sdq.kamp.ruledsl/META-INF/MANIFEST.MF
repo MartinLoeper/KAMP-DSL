@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: edu.kit.ipd.sdq.kamp.ruledsl
 Bundle-Vendor: My Company
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 1.0.0
 Bundle-SymbolicName: edu.kit.ipd.sdq.kamp.ruledsl; singleton:=true
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.xtext,
@@ -44,3 +44,9 @@ Export-Package: edu.kit.ipd.sdq.kamp.ruledsl,
  edu.kit.ipd.sdq.kamp.ruledsl.util,
  edu.kit.ipd.sdq.kamp.ruledsl.validation
 Import-Package: org.apache.log4j
+Bundle-ClassPath: .,
+ lib/rollbar-0.5.4.jar,
+ lib/rollbar-payload-0.5.4.jar,
+ lib/rollbar-sender-0.5.4.jar,
+ lib/rollbar-utilities-0.5.4.jar
+

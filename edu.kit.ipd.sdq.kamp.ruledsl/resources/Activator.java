@@ -3,6 +3,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil;
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorContext;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
 import src.RuleProviderImpl;
@@ -19,10 +20,13 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting;
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorContext;
 
 public class Activator extends AbstractUIPlugin implements BundleActivator {
 
 	private IRuleProvider ruleProvider;
+	private static final RollbarExceptionReporting REPORTING = RollbarExceptionReporting.INSTANCE;
 	
     public void start(BundleContext context) throws Exception {
     	super.start(context);
@@ -33,7 +37,11 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
         	this.ruleProvider.onRegistryReady();
             System.out.println("KAMP-RuleDSL bundle successfully activated.");
         } catch(Exception e) {
+        	// log to console
         	e.printStackTrace();
+        	
+        	// send exception to our rollbar server for examination and bug tracking
+			REPORTING.log(e, ErrorContext.CUSTOM_RULE_REGISTRATION, null);
 			
 			Display.getDefault().asyncExec(new Runnable() {
 			    public void run() {

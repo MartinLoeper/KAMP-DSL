@@ -1,0 +1,18 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="ruledsl" default="resolve">
+    <!--
+	<target name="clean-all" depends="clean" description="clean ivy cache">
+        <ivy:cleancache />
+    </target>
+	-->
+	
+    <target name="resolve" description="retrieve dependencies with ivy">
+        <ivy:retrieve pattern="lib/[artifact](-[classifier]).[ext]"/>
+    </target>
+
+	<!--
+    <target name="clean" description="Remove build directories">
+        <delete dir="lib"/>
+    </target>
+    -->
+
+</project>
