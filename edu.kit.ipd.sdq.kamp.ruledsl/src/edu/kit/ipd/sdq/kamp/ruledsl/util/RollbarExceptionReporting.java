@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.Manifest;
 
+import org.osgi.framework.BundleException;
+
 import com.rollbar.Rollbar;
 import com.rollbar.payload.Payload;
 import com.rollbar.payload.data.Data;
@@ -65,15 +67,7 @@ public enum RollbarExceptionReporting {
     	System.out.println("Starting background thread for error reporting...");
     	new Thread(() -> {
 	    	// create the frames with a custom implementation in order to avoid errors
-	    	Throwable safeThrowable = new Throwable(t.getMessage(), t.getCause());
-	    	StackTraceElement[] stackTrace = new StackTraceElement[t.getStackTrace().length];
-	    	for(int i = 0; i < t.getStackTrace().length; i++) {
-	    		StackTraceElement cStackTElement = t.getStackTrace()[i];
-	    		String filename = (cStackTElement.getFileName() == null) ? "<unknown>" : cStackTElement.getFileName();
-	    		stackTrace[i] = new StackTraceElement(cStackTElement.getClassName(), cStackTElement.getMethodName(), filename, cStackTElement.getLineNumber());
-	    	}
-	    	
-	    	safeThrowable.setStackTrace(stackTrace);
+	    	Throwable safeThrowable = createSafeThrowable(t);
 
 	    	String errorFileName = "<unknown>";
 	    	if(t.getStackTrace().length > 0 && t.getStackTrace()[0].getFileName() != null) {
@@ -90,7 +84,8 @@ public enum RollbarExceptionReporting {
 	    		title = getTruncated(title, 250);
 	    	}
 	    	
-	    	String context = (errorContext != null) ? errorContext.toString() : null;
+	    	ErrorContext finalErrorContext = addContextInformation(errorContext, t);
+	    	String context = (finalErrorContext != null) ? finalErrorContext.toString() : null;
 	    	
 	    	Person person = null;
 	    	if(System.getProperty("user.name") != null)
@@ -102,7 +97,7 @@ public enum RollbarExceptionReporting {
 	    	if(System.getProperty("os.name") != null)
 	    		allCustomData.put("os.name", System.getProperty("os.name"));
 	    	
-	    	Data data = new Data(ENVIRONMENT, Body.fromError(safeThrowable, msg), Level.ERROR, new Date(), VERSION, PLATFORM, "java", "KAMP", context, null, person, null, custom, null, title, null, null);
+	    	Data data = new Data(ENVIRONMENT, Body.fromError(safeThrowable, msg), Level.ERROR, new Date(), VERSION, PLATFORM, "java", "KAMP", context, null, person, null, allCustomData, null, title, null, null);
 			Payload p = new Payload(SERVER_POST_ACCESS_TOKEN, data);
 	       
 			// Here you can filter or transform the payload as needed before sending it
@@ -115,7 +110,34 @@ public enum RollbarExceptionReporting {
     	}).start();
     }
     
-    private static String getTruncated(String str, int maxSize){
+    /**
+     * This method adds context information for some corner cases which are not covered in code.
+     * @param errorContext the context which was set manually
+     * @return the context which should be actually set
+     */
+    private ErrorContext addContextInformation(ErrorContext errorContext, Throwable t) {
+		if(t.getClass().isAssignableFrom(BundleException.class) && t.getCause() != null && t.getCause().getClass().equals(Error.class) && t.getCause().getMessage().startsWith("Unresolved compilation problems"))
+			return ErrorContext.SYNTAX_ERROR;
+		
+		return null;
+	}
+
+	// this method is necessary due to a bad implementation of Body.fromError(Throwable), see: https://github.com/rollbar/rollbar-java/issues/44
+    private Throwable createSafeThrowable(Throwable t) {
+    	Throwable safeThrowable = new Throwable((t.getMessage() != null) ? t.getMessage() : null, (t.getCause() != null) ? createSafeThrowable(t.getCause()) : null);
+    	StackTraceElement[] stackTrace = new StackTraceElement[t.getStackTrace().length];
+    	for(int i = 0; i < t.getStackTrace().length; i++) {
+    		StackTraceElement cStackTElement = t.getStackTrace()[i];
+    		String filename = (cStackTElement.getFileName() == null) ? "<unknown>" : cStackTElement.getFileName();
+    		stackTrace[i] = new StackTraceElement(cStackTElement.getClassName(), cStackTElement.getMethodName(), filename, cStackTElement.getLineNumber());
+    	}
+    	
+    	safeThrowable.setStackTrace(stackTrace);
+    	
+    	return safeThrowable;
+	}
+
+	private static String getTruncated(String str, int maxSize){
         int limit = maxSize - 3;
         return (str.length() > maxSize) ? str.substring(0, limit) + "..." : str;
      }
