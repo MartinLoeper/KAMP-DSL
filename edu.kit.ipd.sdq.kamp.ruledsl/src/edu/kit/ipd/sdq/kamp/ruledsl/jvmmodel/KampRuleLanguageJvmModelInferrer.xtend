@@ -143,9 +143,9 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				try {
 					val lookupMethod = rule.toMethod(rule.getLookupMethodName(rule.lookups.last), null) [
 					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))		
-					if(rule.isVersionParameterRequired()) {
+					//if(rule.isVersionParameterRequired()) {	// pass it always as we would have the BiFunction declaration in the utility method of apply
 						parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion))
-					}
+					//}
 	
 					nameForLookup.put(null, "input")
 					body = '''
