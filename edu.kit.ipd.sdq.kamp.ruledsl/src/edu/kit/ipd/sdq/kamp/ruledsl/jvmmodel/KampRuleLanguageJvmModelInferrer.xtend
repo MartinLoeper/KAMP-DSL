@@ -33,6 +33,12 @@ import org.eclipse.emf.common.util.EList
 import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry
 import edu.kit.ipd.sdq.kamp.util.ModificationMarkCreationUtil
 import java.util.Collection
+import org.eclipse.jface.dialogs.ErrorDialog
+import org.eclipse.swt.widgets.Shell
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorHandlingUtil
+import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil
+import org.eclipse.ui.PlatformUI
+import org.osgi.framework.FrameworkUtil
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -79,6 +85,25 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		val clazz = rule.toClass(className);
 		clazz.packageName = "gen.rule";
 		
+		// First check if the project has the JRE on classpath
+		// TODO this might not be the best way to do this, but it works
+		try {
+			annotationRef(Override)
+		} catch(IllegalArgumentException e) {
+			e.printStackTrace;
+			System.err.println("This error is probably caused by JRE not being activated for the project which contains the rules.karl file.")
+			
+			// show a dialog
+			PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+				override void run() {
+					val Shell shell = PlatformUI.getWorkbench().getDisplay().getActiveShell();
+					ErrorDialog.openError(shell, "Error", "The JRE is not on classpath. You must convert the KAMP project to a Java Plugin Project!", ErrorHandlingUtil.createMultiStatus(FrameworkUtil.getBundle(KampRuleLanguageJvmModelInferrer).getSymbolicName(), e.getLocalizedMessage(), e));
+				}
+			});	
+			
+			return;
+		}
+		
 		acceptor.accept(clazz,
 			[ theClass |
 				// theClass.extendedInterfaces += theClass.typeRef(typeRef(String))
@@ -118,9 +143,9 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				try {
 					val lookupMethod = rule.toMethod(rule.getLookupMethodName(rule.lookups.last), null) [
 					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))		
-					if(rule.isVersionParameterRequired()) {
+					//if(rule.isVersionParameterRequired()) {	// pass it always as we would have the BiFunction declaration in the utility method of apply
 						parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion))
-					}
+					//}
 	
 					nameForLookup.put(null, "input")
 					body = '''
