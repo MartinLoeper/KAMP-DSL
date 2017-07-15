@@ -37,5 +37,10 @@ If you want to install everything manually, please follow this guide:
 - the MANIFEST.mf file must import all necessary models which are referenced from .karl file via import (QuickFix available) as required bundles
 - the MANIFEST.mf file must import all Java classes which are referenced by KampRuleLanguageJvmModelInferrer as required bundles
 
+## Versioning
+We support bug reporting through Rollbar. In order to assign the exceptions to versions correctly, the following commit rule is mandatory: **Increment the service portion of the MANIFEST version of the ruledsl bundle** in each merge with the master.
+The eclipse versioning schema is explained in detail here: https://wiki.eclipse.org/Version_Numbering.
+We do not use the qualifier segment. The increment should be applied to the service segment if it is a non breaking, non visible change. Otherwise it should be applied to the minor or major segment depending on whether it is a change which introduces API breakage or not.
+
 ## Wiki
 For more information please navigate into the Wiki of this project.
