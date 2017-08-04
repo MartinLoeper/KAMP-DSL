@@ -1,5 +1,5 @@
 # KAMP-DSL
-This project contains the Domain Specific Language for the KAMP Framework.
+This project contains the Domain Specific Language for the [KAMP Framework](https://github.com/KAMP-Research/KAMP).
 It was created in the course of student assistant activity at the Karlsruhe Institute of Technology / IPD.
 
 The old SVN Repository URL is: https://svnserver.informatik.kit.edu/i43/svn/code/Palladio/Addons/KAMPIntBIISRequirements/branches/generalized-KAMP-rule-generalization/KAMPRuleLanguage/
