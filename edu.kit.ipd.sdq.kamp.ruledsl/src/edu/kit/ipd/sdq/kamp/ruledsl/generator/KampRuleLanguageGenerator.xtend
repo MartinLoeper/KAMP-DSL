@@ -59,9 +59,8 @@ import java.util.jar.Attributes
 import java.io.OutputStreamWriter
 import java.io.OutputStream
 import java.io.ByteArrayOutputStream
-import edu.kit.ipd.sdq.kamp.ruledsl.RollbarExceptionReporting
-import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorContext
 import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorContext
 
 class KampRuleLanguageGenerator implements IGenerator {
 	

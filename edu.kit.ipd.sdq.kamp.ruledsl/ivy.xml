@@ -26,6 +26,7 @@
 	</info>
 	
 	<dependencies>
-        	<dependency org="com.rollbar" name="rollbar" rev="0.5.4"/>
+        <dependency org="com.rollbar" name="rollbar" rev="0.5.4"/>
+        <dependency org="com.google.inject" name="guice" rev="4.1.0"/>
     </dependencies>
 </ivy-module>

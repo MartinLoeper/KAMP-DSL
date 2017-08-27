@@ -10,5 +10,12 @@
 	<classpathentry kind="lib" path="lib/rollbar-payload-0.5.4.jar"/>
 	<classpathentry kind="lib" path="lib/rollbar-sender-0.5.4.jar"/>
 	<classpathentry kind="lib" path="lib/rollbar-utilities-0.5.4.jar"/>
+	<classpathentry kind="lib" path="lib/ant-1.9.4.jar"/>
+	<classpathentry kind="lib" path="lib/ant-launcher-1.9.4.jar"/>
+	<classpathentry kind="lib" path="lib/aopalliance-1.0.jar"/>
+	<classpathentry kind="lib" path="lib/asm-5.0.3.jar"/>
+	<classpathentry kind="lib" path="lib/cglib-3.2.0.jar"/>
+	<classpathentry kind="lib" path="lib/guice-4.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/javax.inject-1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
