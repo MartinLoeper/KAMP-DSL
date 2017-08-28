@@ -19,6 +19,7 @@ import org.eclipse.ui.PlatformUI;
 import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion;
 import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IConfiguration;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil;
@@ -32,6 +33,7 @@ public class RuleProviderBase implements IRuleProvider {
 	private static final RollbarExceptionReporting REPORTING = RollbarExceptionReporting.INSTANCE;
 	private final Map<IRule, KampRuleStub> rules = new HashMap<>();
 	private Consumer<Set<IRule>> preHook;
+	private IConfiguration configuration;
 
 	@Override
 	public final void applyAllRules(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry, AbstractChangePropagationAnalysis changePropagationAnalysis) {
@@ -137,12 +139,6 @@ public class RuleProviderBase implements IRuleProvider {
         
         return ms;
     }
-	
-	// TODO replace this with project scoped preferences in the future: https://help.eclipse.org/mars/topic/org.eclipse.platform.doc.isv/guide/resInt_preferences.htm
-	@Override
-	public boolean areStandardRulesEnabled() {
-		return true;
-	}
 
 	@Override
 	public long getNumberOfRegisteredRules() {
@@ -152,5 +148,15 @@ public class RuleProviderBase implements IRuleProvider {
 	@Override
 	public void runEarlyHook(Consumer<Set<IRule>> preHook) {
 		this.preHook = preHook;
+	}
+
+	@Override
+	public void setConfiguration(IConfiguration config) {
+		this.configuration = config;
+	}
+
+	@Override
+	public IConfiguration getConfiguration() {
+		return this.configuration;
 	}
 }

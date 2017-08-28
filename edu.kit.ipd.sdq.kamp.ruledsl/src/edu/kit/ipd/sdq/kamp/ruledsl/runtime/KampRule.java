@@ -19,7 +19,7 @@ import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
  * This instructs the KAMP framework to exclude <b>all</b> parent rules.
  * <br /><br />
  * This exclusion feature is implemented, because users typically write specific subrules
- * and do not want the parent rules to be ran.
+ * and do not want the parent rules to be run.
  * 
  * @author Martin Loeper
  *

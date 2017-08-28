@@ -20,6 +20,7 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
+import edu.kit.ipd.sdq.kamp.ruledsl.runtime.KampConfiguration;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.KampGraph;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.KampRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.RuleProviderBase;
@@ -28,6 +29,7 @@ import edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph.KampRuleGraph;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleStub;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.RegistryException;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph.KampRuleVertex;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IConfiguration;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
 import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting;
@@ -86,6 +88,27 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 			});
         }
         
+        // scan for configuration classes
+        Set<Class<?>> annotatedClasses = getReflectionsForSrcPackage().getTypesAnnotatedWith(KampConfiguration.class);
+	 	annotatedClasses.stream().forEach(c -> {
+	 		if(IConfiguration.class.isAssignableFrom(c)) {
+	 			Class<? extends IConfiguration> cIConfig = (Class<? extends IConfiguration>) c;
+	 			try {
+					this.ruleProvider.setConfiguration(cIConfig.newInstance());
+				} catch (InstantiationException | IllegalAccessException e) {
+					Display.getDefault().syncExec(new Runnable() {
+					    public void run() {
+					    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
+							Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+			                ErrorDialog.openError(shell, "Dependency Injection Error", "Could not instantiate the Configuration class. Did you forget or override the standard constructor?", status);
+					    }
+					});
+				}
+	 		} else {
+	 			System.err.println("[CONFIG-REGISTRY] The user defined and annotated type does not implement the IConfiguration interface and is thus ignored.");
+	 		}
+	 	});
+        
         this.ruleProvider.runEarlyHook(rules -> {
 	        // 1. Inject the graph we created for DI in every method which is annotated with @KampGraph
         	//    The method must have the following parameter types: KampRuleGraph
@@ -95,8 +118,6 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 		 		// find the corresponding instance
 		 		for(IRule cRule : rules) {
 		 			if(m.getDeclaringClass().equals(cRule.getClass())) {
-		 				System.out.println("Found instance of: " + cRule.getClass().getSimpleName());
-		 				
 		 				// try to inject graph
 		 				try {
 							m.invoke(cRule, this.ruleGraph);
