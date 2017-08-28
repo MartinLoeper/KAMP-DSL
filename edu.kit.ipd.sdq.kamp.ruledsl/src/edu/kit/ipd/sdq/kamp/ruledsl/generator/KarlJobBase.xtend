@@ -628,16 +628,16 @@ abstract class KarlJobBase extends Job {
 		}
     }
     
-    def static createServiceBase(IProject pluginProject, IProgressMonitor monitor) {
-    	val Bundle bundle = FrameworkUtil.getBundle(KampRuleLanguageGenerator);
-        var InputStream in = null;
-		try {
-			in = bundle.getEntry("resources/RuleProviderBase.java").openStream;        
-			pluginProject.getFolder("gen").getFile("RuleProviderBase.java").create(in, false, monitor)
-		} finally {
-			try { if(in !== null) in.close(); } finally {}
-		}
-    }
+//    def static createServiceBase(IProject pluginProject, IProgressMonitor monitor) {
+//    	val Bundle bundle = FrameworkUtil.getBundle(KampRuleLanguageGenerator);
+//        var InputStream in = null;
+//		try {
+//			in = bundle.getEntry("resources/RuleProviderBase.java").openStream;        
+//			pluginProject.getFolder("gen").getFile("RuleProviderBase.java").create(in, false, monitor)
+//		} finally {
+//			try { if(in !== null) in.close(); } finally {}
+//		}
+//    }
     
     def createLookupUtil(IProject pluginProject, IProgressMonitor monitor) {
     	val Bundle bundle = FrameworkUtil.getBundle(KampRuleLanguageGenerator);

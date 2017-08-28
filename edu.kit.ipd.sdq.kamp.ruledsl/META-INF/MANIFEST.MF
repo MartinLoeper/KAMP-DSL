@@ -98,6 +98,8 @@ Export-Package: com.google.common.annotations,
    edu.kit.ipd.sdq.kamp.ruledsl.services,
    org.eclipse.xtext.parser.antlr,
    org.antlr.runtime",
+ edu.kit.ipd.sdq.kamp.ruledsl.runtime,
+ edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph,
  edu.kit.ipd.sdq.kamp.ruledsl.scoping;
   uses:="org.eclipse.emf.ecore,
    tools.vitruv.dsls.mirbase.scoping,

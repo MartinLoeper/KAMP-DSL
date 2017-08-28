@@ -30,7 +30,7 @@ public class KarlProjectUpdateJob extends KarlJobBase {
 		   	createManifest(getBundleNameForProjectName(config.assignedProjectName), project, config.packageUris, subMonitor.split(1), config.resource.contents)	
 		   	syncManifests(project, config.assignedProjectName);
 		    createActivator(project, subMonitor.split(1), config.getRootRuleFile)
-			createServiceBase(project, subMonitor.split(1));
+			//createServiceBase(project, subMonitor.split(1));
 		   	moveRuleSourceFiles(subMonitor.split(1), project, config.sourceFileUris, config.sourceFileNames);
 		    
 		   	buildProject(project, subMonitor.split(1));

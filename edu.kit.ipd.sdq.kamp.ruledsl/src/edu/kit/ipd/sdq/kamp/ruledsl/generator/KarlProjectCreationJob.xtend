@@ -25,13 +25,13 @@ public class KarlProjectCreationJob extends KarlJobBase {
 		try {
 	   		subMonitor.split(1).beginTask("Create plugin project", 1);
 	   		var IProject project = createProject(subMonitor.split(1), config.assignedProjectName);
-	   		createService(project, subMonitor.split(1))
+	   		//createService(project, subMonitor.split(1))
 	   		createPluginXml(project, subMonitor.split(1));
 		   		
 		   	createManifest(getBundleNameForProjectName(config.assignedProjectName), project, config.packageUris, subMonitor.split(1), config.resource.contents)	
 		   	syncManifests(project, config.assignedProjectName);
 		    createActivator(project, subMonitor.split(1), config.getRootRuleFile)
-			createServiceBase(project, subMonitor.split(1));
+			//createServiceBase(project, subMonitor.split(1));
 		   	moveRuleSourceFiles(subMonitor.split(1), project, config.sourceFileUris, config.sourceFileNames);
 		    
 		    setupProject(subMonitor.split(3), project)
