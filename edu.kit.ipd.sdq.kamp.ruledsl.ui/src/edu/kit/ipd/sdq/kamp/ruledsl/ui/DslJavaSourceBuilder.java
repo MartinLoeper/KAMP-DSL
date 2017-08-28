@@ -19,6 +19,8 @@ import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkUtil;
 
+import edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator;
+import edu.kit.ipd.sdq.kamp.ruledsl.generator.KarlJobBase;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageFacade;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil;
 import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorHandlingUtil;
@@ -29,7 +31,11 @@ public class DslJavaSourceBuilder extends IncrementalProjectBuilder {
 	 
 	 @Override
 	 protected IProject[] build(final int kind, final Map<String, String> args, final IProgressMonitor monitor) throws CoreException {
-	 SubMonitor subMonitor = SubMonitor.convert(monitor, "Build and register project", 10);
+	   if(KarlJobBase.isKarlJobRunning()) {
+		   return new IProject[] { getProject() };
+	   }
+		 
+	  SubMonitor subMonitor = SubMonitor.convert(monitor, "Build and register project", 10);
 		 
 	  System.out.println("A file was saved. Trigger the custom builder.");
 	  
@@ -54,6 +60,10 @@ public class DslJavaSourceBuilder extends IncrementalProjectBuilder {
 							public void run() {
 								Shell shell = PlatformUI.getWorkbench().getDisplay().getActiveShell();
 								ErrorDialog.openError(shell, "Error", "The bundle could not be successfully created and injected.", ErrorHandlingUtil.createMultiStatus(FrameworkUtil.getBundle(KampRuleLanguageUtil.class).getSymbolicName(), e.getLocalizedMessage(), e));
+								Throwable t = ((BundleException) e).getNestedException();
+								if(t != null) {
+									t.printStackTrace();
+								}
 							}
 						});
 					}

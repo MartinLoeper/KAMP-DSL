@@ -3,14 +3,16 @@
  */
 package edu.kit.ipd.sdq.kamp.ruledsl
 
-import com.google.inject.Inject
-
 /**
+ * This class creates the Guice Injector which uses the {@link KampRuleLanguageRuntimeModule} in this package.
+ * 
  * Initialization support for running Xtext languages without Equinox extension registry.
  */
 class KampRuleLanguageStandaloneSetup extends KampRuleLanguageStandaloneSetupGenerated {
 
 	def static void doSetup() {
+		// create an instance of this class and run the createInjectorAndDoEMFRegistration method
+		// the injector is used to wire dependencies
 		new KampRuleLanguageStandaloneSetup().createInjectorAndDoEMFRegistration()
 	}
 }

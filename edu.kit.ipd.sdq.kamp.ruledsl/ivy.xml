@@ -26,6 +26,7 @@
 	</info>
 	
 	<dependencies>
-        	<dependency org="com.rollbar" name="rollbar" rev="0.5.4"/>
+        <dependency org="com.rollbar" name="rollbar" rev="0.5.4"/>
+        <dependency org="org.reflections" name="reflections" rev="0.9.10"/>
     </dependencies>
 </ivy-module>

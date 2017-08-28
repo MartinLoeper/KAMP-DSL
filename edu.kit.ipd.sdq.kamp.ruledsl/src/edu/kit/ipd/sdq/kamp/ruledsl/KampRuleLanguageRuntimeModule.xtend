@@ -19,6 +19,8 @@ import com.google.inject.Guice
 import com.google.inject.util.Modules
 
 /**
+ * This is the Guice module which is used to run the KampRuleLanguage core (such as generator).
+ * 
  * Use this class to register components to be used at runtime / without the Equinox extension registry.
  */
 class KampRuleLanguageRuntimeModule extends AbstractKampRuleLanguageRuntimeModule {
