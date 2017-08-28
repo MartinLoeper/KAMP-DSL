@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
@@ -31,6 +32,7 @@ import org.apache.batik.transcoder.image.JPEGTranscoder;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleStub;
 
 
 public class KampRuleGraph implements Iterable<KampRuleVertex> {
@@ -86,18 +88,13 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 	}
 	
 	/**
-	 * Caution: This method destroys the graph!!
-	 * In order to get a topological order, vertices are subsequently removed from the graph.
+	 * In order to get a topological order, the graph is traversed using breadth-first search.
 	 * 
 	 * @return a list of rules which is topologically sorted
 	 */
-	public List<Class<? extends IRule>> topologicalSort() {
-		List<Class<? extends IRule>> rules = new ArrayList<>();
+	public List<KampRuleStub> topologicalSort() {
+		List<KampRuleStub> rules = new ArrayList<>();
 		Set<KampRuleVertex> verticesWithoutParent = new HashSet<>();
-//		Set<KampRuleVertex> allVertices = new HashSet<>();	// copy the set
-//		for(KampRuleVertex v : this) {
-//			allVertices.add(new KampRuleVertex(v));
-//		}
 		
 		for(KampRuleVertex cVertex : this) {
 			if(cVertex.getParent() == null) {
@@ -110,17 +107,15 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 			verticesWithoutParent.clear();
 			while(it.hasNext()) {
 				KampRuleVertex cVertex = it.next();
-				rules.add(cVertex.getContent());
+				
+				// only add the rule if it is active
+				rules.add(new KampRuleStub(cVertex.getContent(), (cVertex.getParent() == null) ? null : cVertex.getParent().getContent(), cVertex.isActive()));
+				
 				for(KampRuleVertex nextVertex : cVertex.getChildren()) {
-					nextVertex.setParent(null);
 					verticesWithoutParent.add(nextVertex);
 				}
-				cVertex.removeAllChildren();
 			}
 		}
-		
-		// clear the graph
-		this.vertices.clear();
 		
 		return rules;
 	}
@@ -147,7 +142,8 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 		return null;
 	}
 	
-	private static final boolean PARENT_VERTEX_ONLY = false;
+	// DEBUG flag which if true restricts the edges which are shown to parent edges only
+	private static final boolean PARENT_EDGE_ONLY = true;
 	
 	public String toDotNotation() {
 		// note: "digraph G {" is needed for online graph creation - normally it is "graph {"
@@ -155,7 +151,7 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 
 		for(KampRuleVertex cVertex : this) {
 			for(KampRuleEdge edge : cVertex.getEdges()) {
-				if(PARENT_VERTEX_ONLY && edge.getType() != KampRuleEdge.Type.PARENT) {
+				if(PARENT_EDGE_ONLY && edge.getType() != KampRuleEdge.Type.PARENT) {
 					continue;
 				}
 					
@@ -189,8 +185,7 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 	private static boolean onlineCreation = false;	// if not online then it tries to create graph via dot.exe
 	private static final String pathToDotExecutable = "C:\\Program Files (x86)\\Graphviz2.38\\bin\\dot.exe";
 	
-	@SuppressWarnings("unused")
-	public void show() {
+	public void show(Consumer<String> viewer) {
 		String dot = toDotNotation();
 		String path = System.getProperty("java.io.tmpdir");
 		String outFile = "output" + (imgCount++) + ".png";
@@ -310,9 +305,14 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 			  }			
 		}
 		
-		new Thread(() -> {
-			ImageViewer.init(path + outFile);
-		}).start();
+		// if no viewer is passed, use an exemplary one
+		if(viewer == null) {
+			new Thread(() -> {
+				ImageViewer.init(path + outFile);
+			}).start();
+		} else {
+			viewer.accept(path + outFile);
+		}
 	}
 	
 	@Override

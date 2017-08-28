@@ -1,4 +1,6 @@
 package gen;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Set;
 
@@ -11,27 +13,33 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.reflections.Reflections;
+import org.reflections.scanners.MethodAnnotationsScanner;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
+import edu.kit.ipd.sdq.kamp.ruledsl.runtime.KampGraph;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.KampRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.RuleProviderBase;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph.GraphException;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph.KampRuleGraph;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleStub;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.RegistryException;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph.KampRuleVertex;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
 import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting;
 import gen.rule.TestRule;
 
+
 public class Activator extends AbstractUIPlugin implements BundleActivator {
 
 	private IRuleProvider ruleProvider;
 	private final KampRuleGraph ruleGraph = new KampRuleGraph();
 	private static final RollbarExceptionReporting REPORTING = RollbarExceptionReporting.INSTANCE;
+	private static Reflections reflections;
 	
     public void start(BundleContext context) throws Exception {
     	super.start(context);
@@ -50,41 +58,89 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
         	// run exclusion algorithms (such as disable all parents)
             this.ruleGraph.runExclusionAlgorithms();
             
-            // TODO for debug purposes: show the graph
-            this.ruleGraph.show();
-            
             // convert rule graph into RuleProvider registry instructions (topological sort)
-//            List<Class<? extends IRule>> rules = this.ruleGraph.topologicalSort();
-//            for(Class<? extends IRule> cRule : rules) {
-//            	System.out.println(cRule.getSimpleName());
-//            }
+            List<KampRuleStub> rules = this.ruleGraph.topologicalSort();
+            for(KampRuleStub cRuleStub : rules) {
+            	System.out.println(cRuleStub.getClazz().getSimpleName());
+            	try {
+            		this.ruleProvider.register(cRuleStub);
+            	} catch(RegistryException e) {
+            		// we have to abort the registration because the DI is not guaranteed to work from now on...
+            		Display.getDefault().syncExec(new Runnable() {
+        			    public void run() {
+        			    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
+        					Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+        	                ErrorDialog.openError(shell, "Rule Registration Error", "The rules could not be instantiated and registered correctly. They were registered until the exception occured. Total rules registered so far: " + ruleProvider.getNumberOfRegisteredRules() + ". Rule causing exception: " + cRuleStub.getClazz().getSimpleName(), status);
+        			    }
+        			});
+            		break;
+            	}
+            }
         } catch(GraphException e) {
         	Display.getDefault().syncExec(new Runnable() {
 			    public void run() {
 			    	MultiStatus status = RuleProviderBase.createMultiStatus("You created a cycle in you rule hierarchy.", e);
 					Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-	                ErrorDialog.openError(shell, "You caused an error", null, status);
+	                ErrorDialog.openError(shell, "Dependency Injection Error", null, status);
 			    }
 			});
         }
         
+        this.ruleProvider.runEarlyHook(rules -> {
+	        // 1. Inject the graph we created for DI in every method which is annotated with @KampGraph
+        	//    The method must have the following parameter types: KampRuleGraph
+        	
+	        Set<Method> annotatedMethods = getReflectionsForSrcPackage().getMethodsAnnotatedWith(KampGraph.class);
+	        annotatedMethods.stream().forEach(m -> {
+		 		// find the corresponding instance
+		 		for(IRule cRule : rules) {
+		 			if(m.getDeclaringClass().equals(cRule.getClass())) {
+		 				System.out.println("Found instance of: " + cRule.getClass().getSimpleName());
+		 				
+		 				// try to inject graph
+		 				try {
+							m.invoke(cRule, this.ruleGraph);
+						} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+							// TODO this might cause too much dialogs... use a newer batch-like api
+							Display.getDefault().syncExec(new Runnable() {
+							    public void run() {
+							    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
+									Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+					                ErrorDialog.openError(shell, "Dependency Injection Error", "Could not inject the KampRuleGraph into method \"" + m.getName() + "\" of class \"" + m.getDeclaringClass().getSimpleName() + "\". Expecting the following signature: " + m.getName() + "(KampRuleGraph)!", status);
+							    }
+							});
+						}
+		 			}
+		 		}
+		 	});
+        });
+
         System.out.println("KAMP-RuleDSL bundle successfully activated.");
         context.registerService(IRuleProvider.class.getName(), ruleProvider, null);
     }
     
-    public void registerUsersRules() {
-    	Reflections reflections = new Reflections(new ConfigurationBuilder()
+    private Reflections getReflectionsForSrcPackage() {
+    	if(reflections == null) {
+    		reflections = new Reflections(new ConfigurationBuilder()
 	 			 .addClassLoaders(new ClassLoader[] { getClass().getClassLoader() })
 	 		     .setUrls(ClasspathHelper.forPackage("src", getClass().getClassLoader()))
-	 		     .setScanners(new SubTypesScanner(false), new TypeAnnotationsScanner())
+	 		     .setScanners(new SubTypesScanner(false), new TypeAnnotationsScanner(), new MethodAnnotationsScanner())
 	 		     .filterInputsBy(new FilterBuilder().includePackage("src"))); 
-	 	
-	 	Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(KampRule.class);
+    	}
+    	
+    	return reflections;
+    }
+    
+    public void registerUsersRules() {	 	
+	 	Set<Class<?>> annotatedClasses = getReflectionsForSrcPackage().getTypesAnnotatedWith(KampRule.class);
 	 	
 	 	annotatedClasses.stream().forEach(c -> {
 	 		if(IRule.class.isAssignableFrom(c)) {
 	 			Class<? extends IRule> cIRule = (Class<? extends IRule>) c;
-	 			KampRuleVertex cVertex = new KampRuleVertex(cIRule);
+	 			KampRuleVertex cVertex = this.ruleGraph.getVertex(cIRule);
+	 			if(cVertex == null)
+	 				cVertex = new KampRuleVertex(cIRule);
+	 			
 	 			this.ruleGraph.addVertex(cVertex);
 	 			
 	 			KampRule[] kampRuleAnnotations = c.getDeclaredAnnotationsByType(KampRule.class);
@@ -94,36 +150,25 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 	 				}
 	 				
 	 				KampRule kampRuleAnnotation = kampRuleAnnotations[0];
-	 				IRule ruleInstance = null;
+
 		 			if(!kampRuleAnnotation.parent().getClass().equals(IRule.class)) {
 		 				KampRuleVertex parentVertex = this.ruleGraph.getVertex(kampRuleAnnotation.parent());
 		 				if(parentVertex == null) {
 		 					parentVertex = new KampRuleVertex(kampRuleAnnotation.parent());
+		 					this.ruleGraph.addVertex(parentVertex);
 		 				}
 		 				
 		 				cVertex.setParent(parentVertex);
 		 				parentVertex.addChild(cVertex);
-//		 				try {
-//							// TODO implement some kind of DI
-//		 					//ruleInstance = (IRule) c.getConstructor(IRule.class).newInstance(null);
-//		 					//ruleInstance = (IRule) c.newInstance();
-//							//this.ruleProvider.register(ruleInstance);
-//						} catch (InstantiationException | IllegalAccessException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
 		 				
+		 				// only take the disableParent option into account if a parent rule is set
 		 				if(kampRuleAnnotation.disableParent()) {
 			 				cVertex.disableAllParents();
 		 				} 
-		 			} else {
-		 				try {
-							ruleInstance = (IRule) c.newInstance();
-							//this.ruleProvider.register(ruleInstance);
-						} catch (InstantiationException | IllegalAccessException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+		 			}
+		 			
+		 			if(!kampRuleAnnotation.enabled()) {
+		 				cVertex.setActive(false);
 		 			}
 	 			}
 	 		} else {

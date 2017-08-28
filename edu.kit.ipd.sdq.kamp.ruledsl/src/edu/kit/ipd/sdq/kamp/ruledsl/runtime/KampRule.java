@@ -29,4 +29,5 @@ import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 public @interface KampRule {
 	Class<? extends IRule> parent() default IRule.class;
 	boolean disableParent() default true;
+	boolean enabled() default true;
 }
