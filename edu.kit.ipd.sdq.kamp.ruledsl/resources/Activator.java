@@ -31,7 +31,7 @@ import edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph.KampRuleVertex;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
 import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting;
-import gen.rule.TestRule;
+import gen.rule.*;
 
 
 public class Activator extends AbstractUIPlugin implements BundleActivator {
@@ -106,7 +106,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 							    public void run() {
 							    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
 									Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-					                ErrorDialog.openError(shell, "Dependency Injection Error", "Could not inject the KampRuleGraph into method \"" + m.getName() + "\" of class \"" + m.getDeclaringClass().getSimpleName() + "\". Expecting the following signature: " + m.getName() + "(KampRuleGraph)!", status);
+					                ErrorDialog.openError(shell, "Dependency Injection Error", "Could not inject the KampRuleGraph into method \"" + m.getName() + "\" of class \"" + m.getDeclaringClass().getSimpleName() + "\"." + ((e instanceof IllegalArgumentException) ? "Expecting the following signature: " + m.getName() + "(KampRuleGraph)!" : ""), status);
 							    }
 							});
 						}

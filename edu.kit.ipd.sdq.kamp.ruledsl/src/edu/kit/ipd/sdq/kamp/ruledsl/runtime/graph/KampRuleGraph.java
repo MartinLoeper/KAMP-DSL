@@ -166,15 +166,13 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 		}
 		
 		for(KampRuleVertex v : this) {
-			//if(!verticesProcessed.contains(v)) {	// put in all of them to add some custom styles
-				out += "\t\"" + v.toString() + "\""
-					+ "[color=" + (v.isActive() ? "blue" : "black") + " "
-					+ "style=" + ((v.isActive()) ? "filled" : "bold") + " "
-					+ "fontcolor=" + (v.isActive() ? "white" : "black") + " "
-					+ "fontname=Arial "
-					+ "fontsize=16 "
-					+ "shape=box]\n";
-			//}
+			out += "\t\"" + v.toString() + "\""
+				+ "[color=" + (v.isActive() ? "blue" : "black") + " "
+				+ "style=" + ((v.isActive()) ? "filled" : "bold") + " "
+				+ "fontcolor=" + (v.isActive() ? "white" : "black") + " "
+				+ "fontname=Arial "
+				+ "fontsize=16 "
+				+ "shape=box]\n";
 		}
 		
 		out += "}";
@@ -183,9 +181,8 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 	
 	private static int imgCount = 0;
 	private static boolean onlineCreation = false;	// if not online then it tries to create graph via dot.exe
-	private static final String pathToDotExecutable = "C:\\Program Files (x86)\\Graphviz2.38\\bin\\dot.exe";
 	
-	public void show(Consumer<String> viewer) {
+	public void show(Consumer<String> viewer, String pathToDotExecutable) throws IOException, InterruptedException {
 		String dot = toDotNotation();
 		String path = System.getProperty("java.io.tmpdir");
 		String outFile = "output" + (imgCount++) + ".png";
@@ -195,43 +192,31 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 			file.delete();
 		}
 		
-		// TODO edit Graphviz2.38 path for your custom installation!!
 		if(!onlineCreation  && !new File(pathToDotExecutable).exists()) {
-			//throw new RuntimeException("Please specify the correct path to GraphViz .dot executable in AbstractGraph.show(). If you do not know about GraphViz, visit: http://www.graphviz.org/Download..php.");
-			// fallback is online graph creation
-			onlineCreation = true;
+			throw new IOException("Please specify the correct path to GraphViz .dot executable in AbstractGraph.show(). If you do not know about GraphViz, visit: http://www.graphviz.org/Download.php.");
+			// do not fallback to online creation automatically
+			// onlineCreation = true;
 		}
 		
 		if(!onlineCreation) {		
-			try {
-				PrintWriter out = new PrintWriter(path + "input.dot");
-				out.print(dot);
-				out.close();
-			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			PrintWriter out = new PrintWriter(path + "input.dot");
+			out.print(dot);
+			out.close();
 			
-			try {
-				String[] params = new String [] { pathToDotExecutable, "-Tpng", path + "input.dot" };
-				
-			    ProcessBuilder builder = new ProcessBuilder(params);
-			    builder.redirectOutput(new File(path + outFile));
-			    Process p = builder.start();
-			    InputStreamReader isr = new  InputStreamReader(p.getInputStream());
-			    BufferedReader br = new BufferedReader(isr);
-	
-			    String lineRead;
-			    while ((lineRead = br.readLine()) != null) {
-			    	System.out.println(lineRead);
-			    }
-	
-			    p.waitFor();
-			} catch (IOException | InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return;
-			}
+			String[] params = new String [] { pathToDotExecutable, "-Tpng", path + "input.dot" };
+			
+		    ProcessBuilder builder = new ProcessBuilder(params);
+		    builder.redirectOutput(new File(path + outFile));
+		    Process p = builder.start();
+		    InputStreamReader isr = new  InputStreamReader(p.getInputStream());
+		    BufferedReader br = new BufferedReader(isr);
+
+		    String lineRead;
+		    while ((lineRead = br.readLine()) != null) {
+		    	System.out.println(lineRead);
+		    }
+
+		    p.waitFor();
 		}
 		else {
 			String urlParameters;
