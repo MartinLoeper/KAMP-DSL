@@ -147,7 +147,7 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 	
 	public String toDotNotation() {
 		// note: "digraph G {" is needed for online graph creation - normally it is "graph {"
-		String out = "digraph G {\n\tcenter=true; orientation=portrait; label=\"Rule-Graph\"; rankdir=LR; clusterrank=global; fontname=Arial; fontsize=22; concentrate=true;\n\n";
+		String out = "digraph G {\n\tcenter=true; orientation=portrait; label=\"Dependency Injection Rule-Graph\"; rankdir=LR; clusterrank=global; fontname=Arial; fontsize=22; concentrate=true;\n\n";
 
 		for(KampRuleVertex cVertex : this) {
 			for(KampRuleEdge edge : cVertex.getEdges()) {
@@ -167,12 +167,12 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 		
 		for(KampRuleVertex v : this) {
 			out += "\t\"" + v.toString() + "\""
-				+ "[color=" + (v.isActive() ? "blue" : "black") + " "
-				+ "style=" + ((v.isActive()) ? "filled" : "bold") + " "
-				+ "fontcolor=" + (v.isActive() ? "white" : "black") + " "
+				+ "[color=" + (v.isActive() ? "yellowgreen" : "black") + " "
+				+ "style=" + ((v.isActive()) ? "bold" : "bold") + " "
+				+ "fontcolor=" + (v.isActive() ? "black" : "black") + " "
 				+ "fontname=Arial "
 				+ "fontsize=16 "
-				+ "shape=box]\n";
+				+ "shape=" + ((v.isUserDefined()) ? "signature" : "box") + "]\n";
 		}
 		
 		out += "}";

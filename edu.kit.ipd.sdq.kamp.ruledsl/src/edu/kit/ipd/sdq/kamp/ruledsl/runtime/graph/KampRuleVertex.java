@@ -14,6 +14,7 @@ public class KampRuleVertex {
 	private KampRuleVertex parent;
 	private boolean active = true;
 	private boolean disableAllParents = false;
+	private boolean isUserDefined = true;
 	
 	public KampRuleVertex(Class<? extends IRule> clazz) {
 		this.content = clazz;
@@ -25,6 +26,14 @@ public class KampRuleVertex {
 	
 	public Collection<KampRuleVertex> getChildren() {
 		return this.children;
+	}
+	
+	public void setUserDefined(boolean isUserDefined) {
+		this.isUserDefined = isUserDefined;
+	}
+	
+	public boolean isUserDefined() {
+		return this.isUserDefined;
 	}
 	
 	public void setParent(KampRuleVertex vertex) {

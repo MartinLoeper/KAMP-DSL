@@ -90,24 +90,29 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
         
         // scan for configuration classes
         Set<Class<?>> annotatedClasses = getReflectionsForSrcPackage().getTypesAnnotatedWith(KampConfiguration.class);
-	 	annotatedClasses.stream().forEach(c -> {
-	 		if(IConfiguration.class.isAssignableFrom(c)) {
-	 			Class<? extends IConfiguration> cIConfig = (Class<? extends IConfiguration>) c;
-	 			try {
-					this.ruleProvider.setConfiguration(cIConfig.newInstance());
-				} catch (InstantiationException | IllegalAccessException e) {
-					Display.getDefault().syncExec(new Runnable() {
-					    public void run() {
-					    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
-							Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-			                ErrorDialog.openError(shell, "Dependency Injection Error", "Could not instantiate the Configuration class. Did you forget or override the standard constructor?", status);
-					    }
-					});
-				}
+	 	if(annotatedClasses.size() > 0) {
+	 		if(annotatedClasses.size() == 1) {
+	 			Class<?> c = annotatedClasses.stream().findFirst().get();
+		 		if(IConfiguration.class.isAssignableFrom(c)) {
+		 			Class<? extends IConfiguration> cIConfig = (Class<? extends IConfiguration>) c;
+		 			try {
+						this.ruleProvider.setConfiguration(cIConfig.newInstance());
+					} catch (InstantiationException | IllegalAccessException e) {
+						Display.getDefault().syncExec(new Runnable() {
+						    public void run() {
+						    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
+								Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+				                ErrorDialog.openError(shell, "Dependency Injection Error", "Could not instantiate the Configuration class. Did you forget or override the standard constructor?", status);
+						    }
+						});
+					}
+		 		} else {
+		 			System.err.println("[CONFIG-REGISTRY] The user defined and annotated type does not implement the IConfiguration interface and is thus ignored.");
+		 		}
 	 		} else {
-	 			System.err.println("[CONFIG-REGISTRY] The user defined and annotated type does not implement the IConfiguration interface and is thus ignored.");
+	 			System.err.println("[CONFIG-REGISTRY] More than one class is annotated with @KampConfiguration. None of them is honored until only one KampConfiguration annotation is present.");
 	 		}
-	 	});
+	 	}
         
         this.ruleProvider.runEarlyHook(rules -> {
 	        // 1. Inject the graph we created for DI in every method which is annotated with @KampGraph
@@ -208,7 +213,9 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
     	@SuppressWarnings("unchecked")
 		Class<? extends IRule>[] rules = new Class[] { %s };
     	for(Class<? extends IRule> cRule : rules) {
-    		this.ruleGraph.addVertex(new KampRuleVertex(cRule));
+    		KampRuleVertex v = new KampRuleVertex(cRule);
+    		v.setUserDefined(false);
+    		this.ruleGraph.addVertex(v);
     	}
     }
 }
