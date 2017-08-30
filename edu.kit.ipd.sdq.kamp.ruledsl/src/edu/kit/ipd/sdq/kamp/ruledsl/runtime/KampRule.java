@@ -6,6 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IRuleProvider;
 
 /**
  * Indicates that the annotated class is a KAMP rule.
@@ -27,7 +28,24 @@ import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 @Target(value = ElementType.TYPE)
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface KampRule {
+	/**
+	 * Sets the given rule as parent of this one. Each rule can have max. one parent. Cycles are not allowed and result in a RuntimeException being thrown.
+	 * This instructs the registry to create the parent rule first and subsequently inject it into this one.
+	 * Please keep in mind, that you must implement a constructor which takes exactly the type of the parent rule as first parameter.
+	 * @return the parent of this rule
+	 */
 	Class<? extends IRule> parent() default IRule.class;
-	boolean disableParent() default true;
+	
+	/**
+	 * If set true, it will disable all ancestor rules. This means, they are instantiated and injected but not run on their own.
+	 * @return whether the state of all ancestors is set to disabled
+	 */
+	boolean disableAncestors() default true;
+	
+	/**
+	 * If set true, this rule is run on its own. This means that the {@link IRuleProvider#applyAllRules(edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion, edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry, edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis)} method invokes this rule explicitly.
+	 * Please note that even if this rule is disabled, it may be invoked by a child rule.
+	 * @return whether this rule is run by the registry explicitly
+	 */
 	boolean enabled() default true;
 }

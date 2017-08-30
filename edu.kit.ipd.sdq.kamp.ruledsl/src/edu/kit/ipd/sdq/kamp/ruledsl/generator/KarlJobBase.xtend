@@ -617,16 +617,16 @@ abstract class KarlJobBase extends Job {
     	}	
     }
     
-    def createStartupRegistry(IProject pluginProject, IProgressMonitor monitor) {
-    	val Bundle bundle = FrameworkUtil.getBundle(class);
-        var InputStream in = null;
-		try {
-			in = bundle.getEntry("resources/Startup.java").openStream;        
-			pluginProject.getFolder("gen").getFile("Startup.java").create(in, false, monitor)
-		} finally {
-			try { if(in !== null) in.close(); } finally {}
-		}
-    }
+//    def createStartupRegistry(IProject pluginProject, IProgressMonitor monitor) {
+//    	val Bundle bundle = FrameworkUtil.getBundle(class);
+//        var InputStream in = null;
+//		try {
+//			in = bundle.getEntry("resources/Startup.java").openStream;        
+//			pluginProject.getFolder("gen").getFile("Startup.java").create(in, false, monitor)
+//		} finally {
+//			try { if(in !== null) in.close(); } finally {}
+//		}
+//    }
     
 //    def static createServiceBase(IProject pluginProject, IProgressMonitor monitor) {
 //    	val Bundle bundle = FrameworkUtil.getBundle(KampRuleLanguageGenerator);
@@ -639,27 +639,27 @@ abstract class KarlJobBase extends Job {
 //		}
 //    }
     
-    def createLookupUtil(IProject pluginProject, IProgressMonitor monitor) {
-    	val Bundle bundle = FrameworkUtil.getBundle(KampRuleLanguageGenerator);
-        var InputStream in = null;
-		try {
-			in = bundle.getEntry("resources/LookupUtil.java").openStream;        
-			pluginProject.getFolder("gen").getFile("LookupUtil.java").create(in, false, monitor)
-		} finally {
-			try { if(in !== null) in.close(); } finally {}
-		}
-    }
+//    def createLookupUtil(IProject pluginProject, IProgressMonitor monitor) {
+//    	val Bundle bundle = FrameworkUtil.getBundle(KampRuleLanguageGenerator);
+//        var InputStream in = null;
+//		try {
+//			in = bundle.getEntry("resources/LookupUtil.java").openStream;        
+//			pluginProject.getFolder("gen").getFile("LookupUtil.java").create(in, false, monitor)
+//		} finally {
+//			try { if(in !== null) in.close(); } finally {}
+//		}
+//    }
     
-    def static createService(IProject pluginProject, IProgressMonitor monitor) {
-        val Bundle bundle = FrameworkUtil.getBundle(KampRuleLanguageGenerator);
-        var InputStream in = null;
-		try {
-			in = bundle.getEntry("resources/RuleProviderImpl.java").openStream;        
-			pluginProject.getFolder("src").getFile("RuleProviderImpl.java").create(in, false, monitor)
-		} finally {
-			try { if(in !== null) in.close(); } finally {}
-		}
-    }
+//    def static createService(IProject pluginProject, IProgressMonitor monitor) {
+//        val Bundle bundle = FrameworkUtil.getBundle(KampRuleLanguageGenerator);
+//        var InputStream in = null;
+//		try {
+//			in = bundle.getEntry("resources/RuleProviderImpl.java").openStream;        
+//			pluginProject.getFolder("src").getFile("RuleProviderImpl.java").create(in, false, monitor)
+//		} finally {
+//			try { if(in !== null) in.close(); } finally {}
+//		}
+//    }
     
     def static removeGeneratedFolderContents(IProject destinationProject, IProgressMonitor monitor) {
 		if(!destinationProject.getFolder("gen").exists)

@@ -28,7 +28,22 @@ import edu.kit.ipd.sdq.kamp.ruledsl.support.RegistryException;
 import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorContext;
 import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting;
 
-public class RuleProviderBase implements IRuleProvider {
+/**
+ * This class is also called the RuleRegistry.
+ * It instantiates the rules which are registered by the Activator.
+ * The Activator in contrast contains a dependency graph. 
+ * This dependency graph is broken down into a list which constitutes a topological order in which the rules are instantiated and wired together.
+ * <br /><br/>
+ * The {@link RuleProvider#applyAllRules(AbstractArchitectureVersion, ChangePropagationStepRegistry, AbstractChangePropagationAnalysis)}
+ * method is called by the KAMP propagation analysis once the user requests step 3: calculate change propagation.
+ * <br /><br />
+ * The rules are ran in arbitrary order. The registry does not guarantee any order. It is guaranteed that each rule is run exactly once unless
+ * it was disabled by the user or a dependency injection default.
+ * 
+ * @author Martin Loeper
+ *
+ */
+public class RuleProvider implements IRuleProvider {
 	
 	private static final RollbarExceptionReporting REPORTING = RollbarExceptionReporting.INSTANCE;
 	private final Map<IRule, KampRuleStub> rules = new HashMap<>();
@@ -36,7 +51,7 @@ public class RuleProviderBase implements IRuleProvider {
 	private IConfiguration configuration;
 
 	@Override
-	public final void applyAllRules(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry, AbstractChangePropagationAnalysis changePropagationAnalysis) {
+	public final void applyAllRules(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry) {
 		if(!REPORTING.isInitialized()) {
 			REPORTING.init();
 		}
@@ -56,7 +71,7 @@ public class RuleProviderBase implements IRuleProvider {
 			IRule cRule = cRuleEntry.getKey();
 			System.out.println("Running rule: " + cRule.getClass().toString());
 			try {
-				cRule.apply(version, registry, changePropagationAnalysis);
+				cRule.apply(version, registry);
 			} catch(final Exception e) {
 				// send exception to our rollbar server for examination and bug tracking
 				REPORTING.log(e, ErrorContext.CUSTOM_RULE, null);

@@ -111,9 +111,8 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				theClass.superTypes += typeRef(IRule)
 							
 				val applyMethod = rule.toMethod(getMethodName(), typeRef("void")) [
-					parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion))
+					parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion, wildcard()))
 					parameters += rule.toParameter("registry", typeRef(ChangePropagationStepRegistry))
-					parameters += rule.toParameter("changePropagationAnalysis", typeRef(AbstractChangePropagationAnalysis))
 					
 					nameForLookup.put(null, "input")
 					if(rule.modificationMark !== null) {

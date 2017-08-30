@@ -1,10 +1,10 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,18 +20,20 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.JPEGTranscoder;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 
-import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleStub;
 
 
@@ -48,7 +50,7 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 	 */
 	public void runExclusionAlgorithms() {
 		
-		// exclude all parents of a vertex, if disable all parents is set on a vertex
+		// 1. exclude all parents of a vertex, if disable all parents is set on a vertex (iterative depth-first search)
 		for(KampRuleVertex vertex : this) {
 			if(vertex.isDisableAllParents()) {
 				// follow the path recursively in order to disable all vertices on the path
@@ -182,6 +184,10 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 	private static int imgCount = 0;
 	private static boolean onlineCreation = false;	// if not online then it tries to create graph via dot.exe
 	
+	public void show(String pathToDotExecutable) throws IOException, InterruptedException {
+		show(null, pathToDotExecutable);
+	}
+	
 	public void show(Consumer<String> viewer, String pathToDotExecutable) throws IOException, InterruptedException {
 		String dot = toDotNotation();
 		String path = System.getProperty("java.io.tmpdir");
@@ -280,9 +286,7 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 		        ostream.close();
 		        
 			  } catch (Exception e) {
-				  System.out.println("Error, creating graph on server. Do you have an internet connection?");
-			    e.printStackTrace();
-			    return;
+				  throw new IOException("Error, creating graph on server. Do you have an internet connection?");
 			  } finally {
 			    if(connection != null) {
 			      connection.disconnect(); 
@@ -290,14 +294,34 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 			  }			
 		}
 		
-		// if no viewer is passed, use an exemplary one
-		if(viewer == null) {
-			new Thread(() -> {
-				ImageViewer.init(path + outFile);
-			}).start();
-		} else {
-			viewer.accept(path + outFile);
-		}
+		new Thread(() -> {
+			// if no viewer is passed, use an exemplary one
+			SwingUtilities.invokeLater(new Runnable() {
+			    public void run() {
+					if(viewer == null) {
+						JFrame frame = new JFrame();
+			
+						try {
+							BufferedImage myPicture = ImageIO.read(new File(path + outFile));
+							JLabel picLabel = new JLabel(new ImageIcon(myPicture));
+			
+							frame.setTitle("Dependency Graph for Kamp Rules");
+					    	frame.add(picLabel);
+					    	frame.setSize(myPicture.getWidth() + 100, myPicture.getHeight() + 100);
+					    	frame.setLocationRelativeTo(null);
+					    	frame.setVisible(true);
+					    	frame.toFront();
+					    	frame.repaint();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} else {
+						viewer.accept(path + outFile);
+					}
+			    }
+			});
+		}).start();
 	}
 	
 	@Override

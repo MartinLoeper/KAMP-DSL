@@ -23,7 +23,7 @@ import org.reflections.util.FilterBuilder;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.KampConfiguration;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.KampGraph;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.KampRule;
-import edu.kit.ipd.sdq.kamp.ruledsl.runtime.RuleProviderBase;
+import edu.kit.ipd.sdq.kamp.ruledsl.runtime.RuleProvider;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph.GraphException;
 import edu.kit.ipd.sdq.kamp.ruledsl.runtime.graph.KampRuleGraph;
 import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleStub;
@@ -47,7 +47,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
     	super.start(context);
         
     	// build the rule provider, which contains all rules which will be examined in list form (instead of graph)
-        ruleProvider = new RuleProviderBase();
+        this.ruleProvider = new RuleProvider();
         
         // build the rule graph
         registerRules();
@@ -70,7 +70,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
             		// we have to abort the registration because the DI is not guaranteed to work from now on...
             		Display.getDefault().syncExec(new Runnable() {
         			    public void run() {
-        			    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
+        			    	MultiStatus status = RuleProvider.createMultiStatus(null, e);
         					Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
         	                ErrorDialog.openError(shell, "Rule Registration Error", "The rules could not be instantiated and registered correctly. They were registered until the exception occured. Total rules registered so far: " + ruleProvider.getNumberOfRegisteredRules() + ". Rule causing exception: " + cRuleStub.getClazz().getSimpleName(), status);
         			    }
@@ -81,7 +81,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
         } catch(GraphException e) {
         	Display.getDefault().syncExec(new Runnable() {
 			    public void run() {
-			    	MultiStatus status = RuleProviderBase.createMultiStatus("You created a cycle in you rule hierarchy.", e);
+			    	MultiStatus status = RuleProvider.createMultiStatus("You created a cycle in you rule hierarchy.", e);
 					Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 	                ErrorDialog.openError(shell, "Dependency Injection Error", null, status);
 			    }
@@ -100,7 +100,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 					} catch (InstantiationException | IllegalAccessException e) {
 						Display.getDefault().syncExec(new Runnable() {
 						    public void run() {
-						    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
+						    	MultiStatus status = RuleProvider.createMultiStatus(null, e);
 								Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 				                ErrorDialog.openError(shell, "Dependency Injection Error", "Could not instantiate the Configuration class. Did you forget or override the standard constructor?", status);
 						    }
@@ -130,7 +130,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 							// TODO this might cause too much dialogs... use a newer batch-like api
 							Display.getDefault().syncExec(new Runnable() {
 							    public void run() {
-							    	MultiStatus status = RuleProviderBase.createMultiStatus(null, e);
+							    	MultiStatus status = RuleProvider.createMultiStatus(null, e);
 									Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 					                ErrorDialog.openError(shell, "Dependency Injection Error", "Could not inject the KampRuleGraph into method \"" + m.getName() + "\" of class \"" + m.getDeclaringClass().getSimpleName() + "\"." + ((e instanceof IllegalArgumentException) ? "Expecting the following signature: " + m.getName() + "(KampRuleGraph)!" : ""), status);
 							    }
@@ -162,6 +162,12 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 	 	
 	 	annotatedClasses.stream().forEach(c -> {
 	 		if(IRule.class.isAssignableFrom(c)) {
+	 			// we have to instantiate the type, so interfaces are not allows
+	 			// TODO what about anonymous classes?
+	 			if(c.isInterface()) {
+	 				return;
+	 			}
+	 			
 	 			Class<? extends IRule> cIRule = (Class<? extends IRule>) c;
 	 			KampRuleVertex cVertex = this.ruleGraph.getVertex(cIRule);
 	 			if(cVertex == null)
@@ -177,7 +183,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 	 				
 	 				KampRule kampRuleAnnotation = kampRuleAnnotations[0];
 
-		 			if(!kampRuleAnnotation.parent().getClass().equals(IRule.class)) {
+		 			if(!kampRuleAnnotation.parent().equals(IRule.class)) {
 		 				KampRuleVertex parentVertex = this.ruleGraph.getVertex(kampRuleAnnotation.parent());
 		 				if(parentVertex == null) {
 		 					parentVertex = new KampRuleVertex(kampRuleAnnotation.parent());
@@ -188,7 +194,7 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
 		 				parentVertex.addChild(cVertex);
 		 				
 		 				// only take the disableParent option into account if a parent rule is set
-		 				if(kampRuleAnnotation.disableParent()) {
+		 				if(kampRuleAnnotation.disableAncestors()) {
 			 				cVertex.disableAllParents();
 		 				} 
 		 			}

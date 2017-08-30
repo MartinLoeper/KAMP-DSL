@@ -40,13 +40,12 @@ public class StopwatchRule implements IRule {
 	}
 	
 	@Override
-	public void apply(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry,
-			AbstractChangePropagationAnalysis changePropagationAnalysis) {
+	public void apply(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry) {
 		
 		this.stopwatch.start();
 		
 		for(long i=0; i < this.iterations; i++) {
-			this.rule.apply(version, registry, changePropagationAnalysis);
+			this.rule.apply(version, registry);
 		}
 		
 		this.stopwatch.stop();
