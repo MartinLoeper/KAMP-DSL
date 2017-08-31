@@ -210,13 +210,11 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		'''// rule: «lookup?.toString», pre: «getPreviousSiblingOfType(lookup, Lookup)?.toString»'''
 	}
 	
-	// TODO changeVarName!!!!!!!!!!!!!!! There might be multiple variables with the same name...
-	
 	/**
 	 * @see #generateCodeForRule(Lookup, JvmGenericType)
 	 */
 	def dispatch generateCodeForRule(ForwardEReference ref, JvmGenericType typeToAddTo) {
-		var varName = '''marked«ref.metaclass.name.toFirstUpper»'''
+		var varName = '''marked«ref.metaclass.name.toFirstUpper»__''' + getLookupNumber(ref)
 		nameForLookup.put(ref, varName)
 		
 		var String inputMethod = "";
@@ -239,12 +237,22 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 * @see #generateCodeForRule(Lookup, JvmGenericType)
 	 */
 	def dispatch generateCodeForRule(BackwardEReference ref, JvmGenericType typeToAddTo) {
-		var varName = '''backmarked«ref.mclass.metaclass.name.toFirstUpper»''' 
+		var varName = '''backmarked«ref.mclass.metaclass.name.toFirstUpper»__''' + getLookupNumber(ref); 
 		nameForLookup.put(ref, varName)
 		
 		'''
 			«Stream.canonicalName»<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))»).stream();
 		'''
+	}
+	
+	def getLookupNumber(Lookup reference) {
+		val list = reference.eContainer.eContents;
+		for(var int i = 0; i < list.size; i++) {
+			val cRule = list.get(i);
+			if(cRule.equals(reference)) {
+				return i;
+			}
+		}
 	}
 	
 	// we do not use this anymore because we always pass the version parameter
