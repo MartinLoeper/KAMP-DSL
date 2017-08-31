@@ -243,7 +243,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		nameForLookup.put(ref, varName)
 		
 		'''
-			«Stream.canonicalName»<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, input).stream();
+			«Stream.canonicalName»<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))»).stream();
 		'''
 	}
 	

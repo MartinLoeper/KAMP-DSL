@@ -182,20 +182,36 @@ public class KampRuleGraph implements Iterable<KampRuleVertex> {
 	}
 	
 	private static int imgCount = 0;
-	private static boolean onlineCreation = false;	// if not online then it tries to create graph via dot.exe
+
+	/**
+	 * Show the {@link KampRuleGraph} using an online source of graphviz.
+	 * Caution: The online API is unstable!! Please use the method {@link #show(String)} or {@link #show(Consumer, String)}
+	 * and pass a local graphviz dot executable location!
+	 * @throws InterruptedException thrown if the dot executable is interrupted
+	 * @throws IOException thrown if the dot executable could not be accessed or the online source was not accessible
+	 */
+	public void show() throws IOException, InterruptedException {
+		show(null, null);
+	}
 	
 	public void show(String pathToDotExecutable) throws IOException, InterruptedException {
 		show(null, pathToDotExecutable);
 	}
 	
+	// TODO fix java.lang.NoClassDefFoundError: org/apache/batik/transcoder/image/PNGTranscoder
 	public void show(Consumer<String> viewer, String pathToDotExecutable) throws IOException, InterruptedException {
 		String dot = toDotNotation();
 		String path = System.getProperty("java.io.tmpdir");
 		String outFile = "output" + (imgCount++) + ".png";
+		boolean onlineCreation = false;
 		
 		File file = new File(path + outFile);
 		if(file.exists()) {
 			file.delete();
+		}
+		
+		if(pathToDotExecutable == null) {
+			onlineCreation = true;
 		}
 		
 		if(!onlineCreation  && !new File(pathToDotExecutable).exists()) {
