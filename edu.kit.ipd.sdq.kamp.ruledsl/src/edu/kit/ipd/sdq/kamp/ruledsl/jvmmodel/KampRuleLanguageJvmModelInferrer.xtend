@@ -35,6 +35,7 @@ import org.osgi.framework.FrameworkUtil
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
+import edu.kit.ipd.sdq.kamp.model.modificationmarks.AbstractModification
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -112,18 +113,13 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					
 					nameForLookup.put(null, "input")
 					if(rule.modificationMark !== null) {
+						
+						// the target type: «getReturnType(rule.lookups.last)».class - is not used anymore because we use generics to ensure it matches
 						body = '''
-							«LookupUtil».lookupMarkedObjectsWithLookupMethod(version, «typeRef(rule.source.metaclass.instanceTypeName)».class, «getReturnType(rule.lookups.last)».class, «rule.getClassName»::«rule.getLookupMethodName(rule.lookups.last)»)
+							«LookupUtil».lookup(version, «typeRef(rule.source.metaclass.instanceTypeName)».class, «rule.getClassName»::«rule.getLookupMethodName(rule.lookups.last)»)
 								.forEach((result) -> {			 
-									«typeRef(Collection, typeRef(rule.modificationMark.target.qualifiedName))» changePropagationSteps = registry.getSubtypes(«rule.modificationMark.target.qualifiedName».class);
-									
-									if(changePropagationSteps.isEmpty()) {
-										throw new UnsupportedOperationException("The ChangePropagationAnalysis does not provide the requested ChangePropagationStep.");
-									} else if(changePropagationSteps.size() > 1) {
-										throw new UnsupportedOperationException("There is more than one candidate supplied for the selected ChangePropagationStep. Please make a more specific selection.");
-									} else {
-										changePropagationSteps.iterator().next().«rule.modificationMark.targetMethod»().add(«ModificationMarkCreationUtil».createModificationMark(result, «rule.modificationMark.type.qualifiedName».eINSTANCE.«rule.modificationMark.memberRef»()));
-									}
+									«AbstractModification»<?, ?> modificationMark = «ModificationMarkCreationUtil».createModificationMark(result, «rule.modificationMark.type.qualifiedName».eINSTANCE.«rule.modificationMark.memberRef»());
+									«ModificationMarkCreationUtil».insertModificationMark(modificationMark, registry, «rule.modificationMark.target.qualifiedName».class, "«rule.modificationMark.targetMethod»");
 								});
 						'''
 					} else {
@@ -142,7 +138,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	
 					nameForLookup.put(null, "input")
 					body = '''
-						«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input = «Stream».of(«rule.source.metaclass.name.toFirstLower»);
+						«typeRef(Collection, typeRef(rule.source.metaclass.instanceTypeName))» input = «Collections».singleton(«rule.source.metaclass.name.toFirstLower»);
 						
 						«FOR x : rule.lookups»
 							«x.generateCodeForRule(theClass)»
@@ -222,8 +218,14 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	def dispatch generateCodeForRule(ForwardEReference ref, JvmGenericType typeToAddTo) {
 		var varName = '''marked«ref.metaclass.name.toFirstUpper»'''
 		nameForLookup.put(ref, varName)
+		
+		var String inputMethod = "";
+		
+		if(nameForLookup.get(getPreviousSiblingOfType(ref, Lookup)) === null)
+			inputMethod = ".stream()";
+		
 		'''
-			Stream<«ref.metaclass.instanceTypeName»> «varName» = «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))»
+			«Stream.canonicalName»<«ref.metaclass.instanceTypeName»> «varName» = «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))»''' + inputMethod + '''
 				«IF ref.feature.many»
 					.flatMap(it -> 
 						it.get«ref.feature.name.toFirstUpper»().stream());
@@ -237,11 +239,11 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 * @see #generateCodeForRule(Lookup, JvmGenericType)
 	 */
 	def dispatch generateCodeForRule(BackwardEReference ref, JvmGenericType typeToAddTo) {
-		var varName = '''backmarked«ref.mclass.metaclass.name.toFirstUpper»'''
+		var varName = '''backmarked«ref.mclass.metaclass.name.toFirstUpper»''' 
 		nameForLookup.put(ref, varName)
 		
 		'''
-			Stream<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, input).stream();
+			«Stream.canonicalName»<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, input).stream();
 		'''
 	}
 	
