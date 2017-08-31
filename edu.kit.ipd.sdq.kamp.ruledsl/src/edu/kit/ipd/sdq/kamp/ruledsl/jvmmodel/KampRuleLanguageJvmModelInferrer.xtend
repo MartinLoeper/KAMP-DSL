@@ -36,6 +36,9 @@ import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
 import edu.kit.ipd.sdq.kamp.model.modificationmarks.AbstractModification
+import org.eclipse.xtend2.lib.StringConcatenationClient
+import org.eclipse.xtend2.lib.StringConcatenationClient.TargetStringConcatenation
+import org.eclipse.xtext.xbase.XExpression
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -137,15 +140,17 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					//}
 	
 					nameForLookup.put(null, "input")
-					body = '''
-						«typeRef(Collection, typeRef(rule.source.metaclass.instanceTypeName))» input = «Collections».singleton(«rule.source.metaclass.name.toFirstLower»);
-						
-						«FOR x : rule.lookups»
-							«x.generateCodeForRule(theClass)»
-						«ENDFOR»
-						
-						return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
-					'''
+					val StringConcatenationClient strategy = '''
+								«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input = «Stream».of(«rule.source.metaclass.name.toFirstLower»);
+								
+								«FOR x : rule.lookups»
+									«x.generateCodeForRule(theClass)»
+								«ENDFOR»
+								
+								return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
+							''';
+
+					setBody(it, strategy);
 				];
 
 				lookupMethod.returnType = Set.typeRef(typeRef(getReturnType(rule.lookups.last)))			
@@ -219,9 +224,6 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		
 		var String inputMethod = "";
 		
-		if(nameForLookup.get(getPreviousSiblingOfType(ref, Lookup)) === null)
-			inputMethod = ".stream()";
-		
 		'''
 			«Stream.canonicalName»<«ref.metaclass.instanceTypeName»> «varName» = «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))»''' + inputMethod + '''
 				«IF ref.feature.many»
@@ -241,8 +243,12 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		nameForLookup.put(ref, varName)
 		
 		'''
-			«Stream.canonicalName»<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))»).stream();
+			«Stream.canonicalName»<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, ''' + getFeatureName(ref) + ''', «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))»).stream();
 		'''
+	}
+	
+	def getFeatureName(BackwardEReference reference) {
+		return if(reference.feature !== null) "\"" + reference.feature.name + "\"" else null;
 	}
 	
 	def getLookupNumber(Lookup reference) {

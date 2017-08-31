@@ -38,7 +38,7 @@ ForwardEReference returns ForwardEReference:
 ;
 
 BackwardEReference: 
-	'<-' mclass=UnnamedMetaclassReference '[' feature=[ecore::EStructuralFeature|ValidID] ']'
+	'<-' mclass=UnnamedMetaclassReference ('[' feature=[ecore::EStructuralFeature|ValidID] ']')?
 ; 
 
 JavaImport:
