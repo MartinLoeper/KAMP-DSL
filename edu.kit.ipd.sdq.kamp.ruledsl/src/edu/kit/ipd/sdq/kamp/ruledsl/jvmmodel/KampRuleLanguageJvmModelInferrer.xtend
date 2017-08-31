@@ -115,7 +115,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 						body = '''
 							«LookupUtil».lookupMarkedObjectsWithLookupMethod(version, «typeRef(rule.source.metaclass.instanceTypeName)».class, «getReturnType(rule.lookups.last)».class, «rule.getClassName»::«rule.getLookupMethodName(rule.lookups.last)»)
 								.forEach((result) -> {			 
-									«typeRef(Collection, typeRef(rule.modificationMark.target.qualifiedName))»changePropagationSteps = registry.getSubtypes(«rule.modificationMark.target.qualifiedName».class);
+									«typeRef(Collection, typeRef(rule.modificationMark.target.qualifiedName))» changePropagationSteps = registry.getSubtypes(«rule.modificationMark.target.qualifiedName».class);
 									
 									if(changePropagationSteps.isEmpty()) {
 										throw new UnsupportedOperationException("The ChangePropagationAnalysis does not provide the requested ChangePropagationStep.");
