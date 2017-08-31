@@ -5,40 +5,36 @@ package edu.kit.ipd.sdq.kamp.ruledsl.jvmmodel
 
 import com.google.inject.Inject
 import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion
-import edu.kit.ipd.sdq.kamp.propagation.AbstractChangePropagationAnalysis
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.BackwardEReference
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.ForwardEReference
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRule
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.Lookup
+import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule
 import edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil
+import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorHandlingUtil
+import edu.kit.ipd.sdq.kamp.util.LookupUtil
+import edu.kit.ipd.sdq.kamp.util.ModificationMarkCreationUtil
+import java.util.Collection
 import java.util.Collections
 import java.util.Map
 import java.util.Set
 import java.util.stream.Collectors
 import java.util.stream.Stream
-import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.jface.dialogs.ErrorDialog
+import org.eclipse.swt.widgets.Shell
+import org.eclipse.ui.PlatformUI
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.common.types.JvmGenericType
 import org.eclipse.xtext.xbase.jvmmodel.AbstractModelInferrer
 import org.eclipse.xtext.xbase.jvmmodel.IJvmDeclaredTypeAcceptor
 import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder
+import org.osgi.framework.FrameworkUtil
 
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
-import edu.kit.ipd.sdq.kamp.util.LookupUtil
-import org.eclipse.emf.common.util.EList
-import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry
-import edu.kit.ipd.sdq.kamp.util.ModificationMarkCreationUtil
-import java.util.Collection
-import org.eclipse.jface.dialogs.ErrorDialog
-import org.eclipse.swt.widgets.Shell
-import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorHandlingUtil
-import edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil
-import org.eclipse.ui.PlatformUI
-import org.osgi.framework.FrameworkUtil
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -136,22 +132,17 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 				];
 				
 				applyMethod.annotations += annotationRef(Override)
-				// TODO remove after the wildcard issue is fixed
-				applyMethod.annotations += annotationRef(SuppressWarnings, "rawtypes")
 			
 				try {
 					val lookupMethod = rule.toMethod(rule.getLookupMethodName(rule.lookups.last), null) [
 					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))		
 					//if(rule.isVersionParameterRequired()) {	// pass it always as we would have the BiFunction declaration in the utility method of apply
-						parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion))
+						parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion, wildcard()))
 					//}
 	
 					nameForLookup.put(null, "input")
 					body = '''
-						«typeRef(Set, typeRef(Resource))» allResources = «Collections».emptySet();
-						
-						«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input =
-							«Stream».of(«rule.source.metaclass.name.toFirstLower»);
+						«typeRef(Stream, typeRef(rule.source.metaclass.instanceTypeName))» input = «Stream».of(«rule.source.metaclass.name.toFirstLower»);
 						
 						«FOR x : rule.lookups»
 							«x.generateCodeForRule(theClass)»
@@ -160,9 +151,8 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 						return «nameForLookup.get(rule.lookups.last)».collect(«typeRef(Collectors)».toSet());
 					'''
 				];
-				// TODO make this work with generics!!
-				//lookupMethod.returnType = Set.typeRef(typeRef(getReturnType(rule.lookups.last)))	// rule.returnType.instanceTypeName.typeRef()				
-				lookupMethod.returnType = Set.typeRef()
+
+				lookupMethod.returnType = Set.typeRef(typeRef(getReturnType(rule.lookups.last)))			
 				lookupMethod.static = true;
 				theClass.members += lookupMethod	
 			} catch(Exception e) {
@@ -201,15 +191,10 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		'lookup' + reference.mclass.metaclass.name.toFirstUpper + 'from' + rule.source.metaclass.name
 	}
 	
-//	def EClass getReturnType(KampRule rule) {
-//		return rule.lookups.last.getMetaclass
-//	}
-	
 	// this one is the entry point and must address the interface method which must be overridden
 	def String getMethodName() {
 		'''apply'''
 	}
-	
 	
 	/**
 	 * <p>Generates the code that is embedded in the method if the given lookup
@@ -257,10 +242,10 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		
 		'''
 			Stream<«ref.mclass.metaclass.instanceTypeName»> «varName» = «LookupUtil.canonicalName».lookupBackreference(version, «ref.mclass.metaclass.instanceTypeName».class, input).stream();
-			
 		'''
 	}
 	
+	// we do not use this anymore because we always pass the version parameter
 	def isVersionParameterRequired(KampRule rule) {
 		rule.lookups.exists[r | r instanceof BackwardEReference];	
 	}
