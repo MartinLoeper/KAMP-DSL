@@ -1,18 +1,14 @@
 package edu.kit.ipd.sdq.kamp.ruledsl.generator
 
-import org.eclipse.core.runtime.jobs.Job
-import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.core.runtime.SubMonitor
-import org.eclipse.core.runtime.Status
-import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting
 import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorContext
+import edu.kit.ipd.sdq.kamp.ruledsl.util.RollbarExceptionReporting
+import org.eclipse.core.resources.IProject
+import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.core.runtime.Status
+import org.eclipse.core.runtime.SubMonitor
+import org.osgi.framework.Bundle
 
 import static edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil.*
-import static edu.kit.ipd.sdq.kamp.ruledsl.generator.KampRuleLanguageGenerator.*;
-import org.eclipse.core.resources.IProject
-import org.osgi.framework.Bundle
-import org.eclipse.core.runtime.jobs.IJobManager
-import org.eclipse.core.resources.ResourcesPlugin
 
 public class KarlProjectUpdateJob extends KarlJobBase {			
     

@@ -10,7 +10,19 @@ import "http://www.eclipse.org/xtext/common/JavaVMTypes" as jvmTypes
 RuleFile:
 	MirBaseFile
 	(javaPackageImports+=JavaImport)*
-	(rules+=KampRule)*
+	(steps+=Step)*
+;
+
+Step:
+	DuplicateAwareStep | IndependentStep
+;
+
+IndependentStep:
+	KampRule
+;
+
+DuplicateAwareStep:
+	'step' '{' (rules+=KampRule)+ '}'
 ;
 
 KampRule:

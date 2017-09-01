@@ -47,6 +47,10 @@ import org.osgi.framework.FrameworkUtil
 import tools.vitruv.framework.util.bridges.EclipseBridge
 
 import static edu.kit.ipd.sdq.kamp.ruledsl.support.KampRuleLanguageUtil.*
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.Step
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.IndependentStep
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRule
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.DuplicateAwareStep
 
 abstract class KarlJobBase extends Job {
 	
@@ -216,6 +220,7 @@ abstract class KarlJobBase extends Job {
 		}
 		
 		requiredBundles.add("org.eclipse.ui");
+		requiredBundles.add("org.eclipse.emf.ecore"); 
 		requiredBundles.add("org.eclipse.emf.compare");
 		requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl");
 		requiredBundles.add("edu.kit.ipd.sdq.kamp.ruledsl.ui")
@@ -593,12 +598,27 @@ abstract class KarlJobBase extends Job {
 	def static createActivator(IProject pluginProject, IProgressMonitor monitor, RuleFile ruleFile) {
 		// determine classes to be registered
 		var String rulesToBeRegistered = "";
-		val rules = ruleFile.rules;
-		for(var int i = 0; i < rules.size; i++) {
-			if(i > 0) {
-				rulesToBeRegistered += ", ";
+		val steps = ruleFile.steps;
+		
+		var int num = 0;
+		for(var int i = 0; i < steps.size; i++) {			
+			val Step cStep = steps.get(i);
+			if(cStep instanceof IndependentStep) {
+				if(num > 0) {
+					rulesToBeRegistered += ", ";
+				}
+			
+				rulesToBeRegistered += (cStep as KampRule).name.toFirstUpper + "Rule.class"
+				num++;
+			} else if(cStep instanceof DuplicateAwareStep) {
+				for(cRule : cStep.rules) {
+					if(num > 0) {
+						rulesToBeRegistered += ", ";
+					}
+					rulesToBeRegistered += cRule.name.toFirstUpper + "Rule.class"
+					num++;
+				}
 			}
-			rulesToBeRegistered += rules.get(i).name.toFirstUpper + "Rule.class";
 		}
 		
 		// copy template and fill in classes to be registered

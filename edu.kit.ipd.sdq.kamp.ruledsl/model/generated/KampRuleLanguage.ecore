@@ -5,10 +5,16 @@
   <eClassifiers xsi:type="ecore:EClass" name="RuleFile" eSuperTypes="platform:/resource/tools.vitruv.dsls.mirbase/model/generated/MirBase.ecore#//MirBaseFile">
     <eStructuralFeatures xsi:type="ecore:EReference" name="javaPackageImports" upperBound="-1"
         eType="#//JavaImport" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="steps" upperBound="-1"
+        eType="#//Step" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Step"/>
+  <eClassifiers xsi:type="ecore:EClass" name="IndependentStep" eSuperTypes="#//Step"/>
+  <eClassifiers xsi:type="ecore:EClass" name="DuplicateAwareStep" eSuperTypes="#//Step">
     <eStructuralFeatures xsi:type="ecore:EReference" name="rules" upperBound="-1"
         eType="#//KampRule" containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="KampRule">
+  <eClassifiers xsi:type="ecore:EClass" name="KampRule" eSuperTypes="#//IndependentStep">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="source" eType="ecore:EClass platform:/resource/tools.vitruv.dsls.mirbase/model/generated/MirBase.ecore#//MetaclassReference"
         containment="true"/>

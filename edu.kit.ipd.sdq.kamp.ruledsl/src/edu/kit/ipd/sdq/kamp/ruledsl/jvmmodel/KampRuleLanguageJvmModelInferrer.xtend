@@ -5,26 +5,29 @@ package edu.kit.ipd.sdq.kamp.ruledsl.jvmmodel
 
 import com.google.inject.Inject
 import edu.kit.ipd.sdq.kamp.architecture.AbstractArchitectureVersion
+import edu.kit.ipd.sdq.kamp.model.modificationmarks.AbstractModification
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.BackwardEReference
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.DuplicateAwareStep
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.ForwardEReference
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.IndependentStep
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRule
 import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.Lookup
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.RuleFile
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.Step
 import edu.kit.ipd.sdq.kamp.ruledsl.support.ChangePropagationStepRegistry
 import edu.kit.ipd.sdq.kamp.ruledsl.support.IRule
 import edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil
 import edu.kit.ipd.sdq.kamp.ruledsl.util.ErrorHandlingUtil
 import edu.kit.ipd.sdq.kamp.util.LookupUtil
 import edu.kit.ipd.sdq.kamp.util.ModificationMarkCreationUtil
-import java.util.Collection
-import java.util.Collections
 import java.util.Map
 import java.util.Set
 import java.util.stream.Collectors
 import java.util.stream.Stream
-import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.jface.dialogs.ErrorDialog
 import org.eclipse.swt.widgets.Shell
 import org.eclipse.ui.PlatformUI
+import org.eclipse.xtend2.lib.StringConcatenationClient
 import org.eclipse.xtext.common.types.JvmDeclaredType
 import org.eclipse.xtext.common.types.JvmGenericType
 import org.eclipse.xtext.xbase.jvmmodel.AbstractModelInferrer
@@ -35,10 +38,9 @@ import org.osgi.framework.FrameworkUtil
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
-import edu.kit.ipd.sdq.kamp.model.modificationmarks.AbstractModification
-import org.eclipse.xtend2.lib.StringConcatenationClient
-import org.eclipse.xtend2.lib.StringConcatenationClient.TargetStringConcatenation
-import org.eclipse.xtext.xbase.XExpression
+import edu.kit.ipd.sdq.kamp.ruledsl.support.IDuplicateAwareRule
+import edu.kit.ipd.sdq.kamp.util.PropagationStepUtil
+import org.eclipse.emf.ecore.EObject
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -80,7 +82,33 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 	 *            rely on linking using the index if isPreIndexingPhase is
 	 *            <code>true</code>.
 	 */
-	def dispatch void infer(KampRule rule, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {		
+	def dispatch void infer(Step step, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase) {		
+		if(step instanceof IndependentStep) {
+			createRule(step as KampRule, acceptor, isPreIndexingPhase, -1);
+		} else if(step instanceof DuplicateAwareStep) {
+			for(rule : step.rules) {
+				createRule(rule, acceptor, isPreIndexingPhase, getStepNumber(rule, step.eContainer as RuleFile));
+			}
+		}	
+	}
+	
+	def int getStepNumber(KampRule rule, RuleFile ruleFile) {
+		var i = -1;
+		for(cStep : ruleFile.steps) {
+			if(cStep instanceof DuplicateAwareStep) {
+				i++;
+				
+				if(cStep.rules.contains(rule)) {
+					return i;
+				}
+			}
+		}
+		
+		return -1;
+	}
+	
+	// stepId == -1 means that it is an idenpendent rule
+	def void createRule(KampRule rule, IJvmDeclaredTypeAcceptor acceptor, boolean isPreIndexingPhase, int stepId) {
 		val className = rule.getClassName();
 		val clazz = rule.toClass(className);
 		clazz.packageName = "gen.rule";
@@ -108,7 +136,21 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 			[ theClass |
 				// theClass.extendedInterfaces += theClass.typeRef(typeRef(String))
 				nameForLookup = newHashMap
-				theClass.superTypes += typeRef(IRule)
+				
+				if(stepId > -1) {
+					theClass.superTypes += typeRef(IDuplicateAwareRule)
+					
+					val getStepIdMethod = rule.toMethod("getStepId", typeRef("int")) [
+						body = '''
+							return «stepId»;
+						'''
+					];
+					
+					getStepIdMethod.annotations += annotationRef(Override)					
+					theClass.members += getStepIdMethod
+				} else {
+					theClass.superTypes += typeRef(IRule)
+				}
 							
 				val applyMethod = rule.toMethod(getMethodName(), typeRef("void")) [
 					parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion, wildcard()))
@@ -120,9 +162,14 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 						// the target type: «getReturnType(rule.lookups.last)».class - is not used anymore because we use generics to ensure it matches
 						body = '''
 							«LookupUtil».lookup(version, «typeRef(rule.source.metaclass.instanceTypeName)».class, «rule.getClassName»::«rule.getLookupMethodName(rule.lookups.last)»)
-								.forEach((result) -> {			 
-									«AbstractModification»<?, ?> modificationMark = «ModificationMarkCreationUtil».createModificationMark(result, «rule.modificationMark.type.qualifiedName».eINSTANCE.«rule.modificationMark.memberRef»());
-									«ModificationMarkCreationUtil».insertModificationMark(modificationMark, registry, «rule.modificationMark.target.qualifiedName».class, "«rule.modificationMark.targetMethod»");
+								.forEach((result) -> {
+									if(«PropagationStepUtil».isNewEntry(result, «stepId», registry)) {
+										«AbstractModification»<?, «EObject»> modificationMark = «ModificationMarkCreationUtil».createModificationMark(result, «rule.modificationMark.type.qualifiedName».eINSTANCE.«rule.modificationMark.memberRef»());
+										«ModificationMarkCreationUtil».insertModificationMark(modificationMark, registry, «rule.modificationMark.target.qualifiedName».class, "«rule.modificationMark.targetMethod»");
+										«PropagationStepUtil».addNewModificationMark(result, modificationMark, «stepId», registry);
+									} else {
+										«PropagationStepUtil».addToExistingModificationMark(result, «stepId», registry);
+									}
 								});
 						'''
 					} else {
