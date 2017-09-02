@@ -19,6 +19,12 @@ import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreU
 import tools.vitruv.dsls.mirbase.mirBase.MetamodelImport
 import org.eclipse.emf.ecore.EcorePackage
 import org.eclipse.xtext.scoping.impl.SimpleScope
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.PropagationReference
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.RuleReference
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.KampRuleLanguagePackage
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.RuleFile
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.DuplicateAwareStep
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.IndependentStep
 
 class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate {
 	override getScope(EObject context, EReference reference) {
@@ -27,9 +33,30 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 		else if (context instanceof BackwardEReference && reference.class.isAssignableFrom(METACLASS_REFERENCE__METACLASS.class))
 			return createFilteredEReferenceScope((context as BackwardEReference)?.mclass, 
 				(context as Lookup)?.previousMetaclass) 
-		else if (context instanceof Lookup && reference.class.isAssignableFrom(METACLASS_REFERENCE__METACLASS.class)) {
+		else if (context instanceof PropagationReference && reference.class.isAssignableFrom(METACLASS_REFERENCE__METACLASS.class)) {
 			return createEReferenceScope((context as Lookup).previousMetaclass)
-		} 
+		} else if(context instanceof RuleReference && reference.equals(KampRuleLanguagePackage.Literals.RULE_REFERENCE__RULE)) {
+			var RuleFile ruleFile = retrieveRuleFile(context);
+			if(ruleFile !== null) {
+				val classifierDescriptions = newArrayList()
+				
+				for(step : ruleFile.steps) {
+					if(step instanceof DuplicateAwareStep) {
+						for(cRule : step.rules) {
+							// a rule may not call itself -> cycle and the source element type must match
+							if(!cRule.equals(context.eContainer) && (context as Lookup).previousMetaclass.equals(cRule.source.metaclass))
+								classifierDescriptions += EObjectDescription.create(cRule.name, cRule)
+						}
+					} else if(step instanceof IndependentStep) {
+						// a rule may not call itself -> cycle and the source element type must match
+						if(!step.equals(context.eContainer) && (context as Lookup).previousMetaclass.equals((step as KampRule).source.metaclass))
+							classifierDescriptions += EObjectDescription.create((step as KampRule).name, step as KampRule)
+					}
+				}
+				
+				return new SimpleScope(IScope.NULLSCOPE, classifierDescriptions)
+			}
+		}
 //		else if(context instanceof ModificationMark && reference == KampRuleLanguagePackage.Literals.MODIFICATION_MARK__TYPE) {
 //			val mm = (context as ModificationMark)
 //			if(mm.type !== null && !(mm.type instanceof JvmVoid)) {				
@@ -45,6 +72,15 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 			return createQualifiedEClassScope((context as MetaclassReference).metamodel, true, false);
 				
 		return super.getScope(context, reference)
+	}
+	
+	private def RuleFile retrieveRuleFile(EObject obj) {
+		var cObj = obj;
+		while(!(cObj instanceof RuleFile) && cObj !== null) {
+			cObj = cObj.eContainer;
+		}
+		
+		return cObj as RuleFile;
 	}
 	
 	// copied from MirBaseScopeProviderDelegate

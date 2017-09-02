@@ -22,7 +22,7 @@ IndependentStep:
 ;
 
 DuplicateAwareStep:
-	'step' '{' (rules+=KampRule)+ '}'
+	'step' (name=ValidID)? '{' (rules+=KampRule)+ '}'
 ;
 
 KampRule:
@@ -42,7 +42,11 @@ Instruction:
 ;
 
 Lookup:
-	PropagationReference
+	PropagationReference | RuleReference
+;
+
+RuleReference:
+	'=>' 'RULE' '[' rule=[KampRule|ValidID] ']'
 ;
 
 CausingEntityMarker:
