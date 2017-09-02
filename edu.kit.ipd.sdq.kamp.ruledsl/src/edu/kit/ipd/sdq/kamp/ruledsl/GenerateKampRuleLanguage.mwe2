@@ -30,13 +30,7 @@ Workflow {
 			project = StandardProjectConfig {
 				baseName = "edu.kit.ipd.sdq.kamp.ruledsl"
 				rootPath = rootPath
-				runtimeTest = {
-					enabled = true
-				}
 				eclipsePlugin = {
-					enabled = true
-				}
-				eclipsePluginTest = {
 					enabled = true
 				}
 				createEclipseMetaData = true

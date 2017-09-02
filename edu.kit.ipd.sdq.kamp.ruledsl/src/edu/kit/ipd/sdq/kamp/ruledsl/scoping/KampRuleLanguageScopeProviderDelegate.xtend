@@ -16,6 +16,9 @@ import tools.vitruv.dsls.mirbase.scoping.MirBaseScopeProviderDelegate
 import static tools.vitruv.dsls.mirbase.mirBase.MirBasePackage.Literals.*
 
 import static extension edu.kit.ipd.sdq.kamp.ruledsl.util.KampRuleLanguageEcoreUtil.*
+import tools.vitruv.dsls.mirbase.mirBase.MetamodelImport
+import org.eclipse.emf.ecore.EcorePackage
+import org.eclipse.xtext.scoping.impl.SimpleScope
 
 class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate {
 	override getScope(EObject context, EReference reference) {
@@ -37,8 +40,29 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 //				}
 //			}
 //		}
+
+		if (reference.equals(METACLASS_REFERENCE__METACLASS))
+			return createQualifiedEClassScope((context as MetaclassReference).metamodel, true, false);
 				
 		return super.getScope(context, reference)
+	}
+	
+	// copied from MirBaseScopeProviderDelegate
+	private def createQualifiedEClassScope(MetamodelImport metamodelImport, boolean includeAbstract, boolean includeEObject) {
+		val classifierDescriptions = 
+			if (metamodelImport === null || metamodelImport.package === null) {
+				if (includeEObject) {
+					#[createEObjectDescription(EcorePackage.Literals.EOBJECT, false)];
+				} else {
+					#[];
+				}
+			} else { 
+				collectObjectDescriptions(metamodelImport.package, 
+					true, includeAbstract, metamodelImport.useQualifiedNames)
+			}
+
+		var resultScope = new SimpleScope(IScope.NULLSCOPE, classifierDescriptions)
+		return resultScope
 	}
 	
 	/**

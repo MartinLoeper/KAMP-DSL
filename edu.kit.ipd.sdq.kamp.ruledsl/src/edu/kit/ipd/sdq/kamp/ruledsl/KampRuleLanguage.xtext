@@ -10,13 +10,25 @@ import "http://www.eclipse.org/xtext/common/JavaVMTypes" as jvmTypes
 RuleFile:
 	MirBaseFile
 	(javaPackageImports+=JavaImport)*
-	(rules+=KampRule)*
+	(steps+=Step)*
+;
+
+Step:
+	DuplicateAwareStep | IndependentStep
+;
+
+IndependentStep:
+	KampRule
+;
+
+DuplicateAwareStep:
+	'step' '{' (rules+=KampRule)+ '}'
 ;
 
 KampRule:
 	'rule' name=ValidID ':'
 	source=UnnamedMetaclassReference
-	(lookups+=Lookup)+
+	(instructions+=Instruction)+
 	';'
 	(modificationMark=ModificationMark)?
 ;
@@ -25,8 +37,16 @@ ModificationMark:
 	'insert' type=[jvmTypes::JvmType|QualifiedName] '#' memberRef=ID 'into' target=[jvmTypes::JvmType|QualifiedName] '#' targetMethod=ID ';'
 ;
 
+Instruction:
+	Lookup | CausingEntityMarker
+;
+
 Lookup:
 	PropagationReference
+;
+
+CausingEntityMarker:
+	{CausingEntityMarker} '*'
 ;
 
 PropagationReference:
@@ -38,7 +58,7 @@ ForwardEReference returns ForwardEReference:
 ;
 
 BackwardEReference: 
-	'<-' mclass=UnnamedMetaclassReference '[' feature=[ecore::EStructuralFeature|ValidID] ']'
+	'<-' mclass=UnnamedMetaclassReference ('[' feature=[ecore::EStructuralFeature|ValidID] ']')?
 ; 
 
 JavaImport:
