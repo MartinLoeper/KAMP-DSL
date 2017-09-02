@@ -49,6 +49,7 @@ import edu.kit.ipd.sdq.kamp.ruledsl.support.CausingEntityMapping
 import java.util.ArrayList
 import java.util.List
 import java.util.HashMap
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.RuleReference
 
 /**
  * <p>Infers a JVM model from the source model.</p> 
@@ -208,14 +209,16 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 			
 				try {
 					val lookupMethod = rule.toMethod(rule.getLookupMethodName(rule.lookups.last), null) [
-					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower, typeRef(rule.source.metaclass.instanceTypeName))		
+					parameters += rule.toParameter(rule.source.metaclass.name.toFirstLower + "Mapping", typeRef(CausingEntityMapping, typeRef(rule.source.metaclass.instanceTypeName), typeRef(EObject)))		
 					//if(rule.isVersionParameterRequired()) {	// pass it always as we would have the BiFunction declaration in the utility method of apply
 						parameters += rule.toParameter("version", typeRef(AbstractArchitectureVersion, wildcard()))
 					//}
 	
 					nameForLookup.put(null, "input")
+					
+					//«generateSourceMarkerParameter(hasSourceMarkerFinal, rule.source.metaclass.name.toFirstLower)»
 					val StringConcatenationClient strategy = '''
-								«typeRef(Stream, typeRef(CausingEntityMapping, typeRef(rule.source.metaclass.instanceClass), typeRef(EObject)))» input = «Stream».of(new «CausingEntityMapping»(«rule.source.metaclass.name.toFirstLower», «generateSourceMarkerParameter(hasSourceMarkerFinal, rule.source.metaclass.name.toFirstLower)»));
+								«typeRef(Stream, typeRef(CausingEntityMapping, typeRef(rule.source.metaclass.instanceClass), typeRef(EObject)))» input = «Stream».of(«rule.source.metaclass.name.toFirstLower + "Mapping"»)«IF hasSourceMarkerFinal».peek(e -> e.getCausingEntities().add(«rule.source.metaclass.name.toFirstLower + "Mapping"».getAffectedElement()));«ELSE»;«ENDIF»
 								
 								«FOR x : rule.lookups»
 									«x.generateCodeForRule(theClass, isRuleMarkedForCausingEntities(x, causingEntityLookups))»
@@ -229,6 +232,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 
 				lookupMethod.returnType = Set.typeRef(typeRef(CausingEntityMapping, typeRef(getReturnType(rule.lookups.last)), typeRef(EObject)))			
 				lookupMethod.static = true;
+				lookupMethod.final = true;
 				theClass.members += lookupMethod	
 			} catch(Exception e) {
 				e.printStackTrace
@@ -293,8 +297,10 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 			lastLookup.metaclass.instanceClass
 		} else if(lastLookup instanceof BackwardEReference) {
 			lastLookup.mclass.metaclass.instanceClass
+		} else if(lastLookup instanceof RuleReference) {
+			lastLookup.rule.lookups.last.returnType
 		} else {
-			Object
+			throw new UnsupportedOperationException("Missing return type determination for lookup type: " + lastLookup.class);
 		}
 	}
 	
@@ -354,6 +360,18 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 		
 		'''
 			«Stream.canonicalName»<CausingEntityMapping<«ref.metaclass.instanceTypeName», EObject>> «varName» = «LookupUtil.canonicalName».lookupBackwardReference(version, «ref.mclass.metaclass.instanceTypeName».class, ''' + getFeatureName(ref) + ''', «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))», «addToCausingEntities»).stream();
+		'''
+	}
+	
+	/**
+	 * @see #generateCodeForRule(Lookup, JvmGenericType)
+	 */
+	def dispatch generateCodeForRule(RuleReference ref, JvmGenericType typeToAddTo, boolean addToCausingEntities) {
+		var varName = '''rulerefmarked«ref.metaclass.name.toFirstUpper»__''' + getLookupNumber(ref)
+		nameForLookup.put(ref, varName)
+		
+		'''
+			«Stream.canonicalName»<CausingEntityMapping<«ref.metaclass.instanceTypeName», EObject>> «varName» = «nameForLookup.get(getPreviousSiblingOfType(ref, Lookup))».flatMap(e -> «ref.rule.className».«getLookupMethodName(ref.rule, ref.rule.lookups.last)»(e, version).stream());
 		'''
 	}
 	

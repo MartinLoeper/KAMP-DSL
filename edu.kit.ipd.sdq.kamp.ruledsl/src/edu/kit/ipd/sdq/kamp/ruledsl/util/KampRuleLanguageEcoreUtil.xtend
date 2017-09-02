@@ -8,6 +8,7 @@ import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.PropagationReference
 import org.eclipse.emf.ecore.EClass
 import tools.vitruv.dsls.mirbase.mirBase.MetaclassReference
 import static edu.kit.ipd.sdq.kamp.ruledsl.util.EcoreUtil.*
+import edu.kit.ipd.sdq.kamp.ruledsl.kampRuleLanguage.RuleReference
 
 final class KampRuleLanguageEcoreUtil {
 	private new() {
@@ -33,6 +34,11 @@ final class KampRuleLanguageEcoreUtil {
 	def static dispatch EClass getMetaclass(BackwardEReference ref) {
 		// TODO is this cast risky?? which of those subclasses of eclassifier is possible? EClassifierImpl, EClassImpl, EDataTypeImpl, EEnumImpl
 		ref.mclass.metaclass as EClass;
+	}
+	
+	def static dispatch EClass getMetaclass(RuleReference ref) {
+		val Lookup lastLookup = ref.rule.instructions.filter[i | i instanceof Lookup].map(i | Lookup.cast(i)).last;
+		getMetaclass(lastLookup);
 	}
 	
 	/**

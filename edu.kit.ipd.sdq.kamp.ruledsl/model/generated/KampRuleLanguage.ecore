@@ -11,6 +11,7 @@
   <eClassifiers xsi:type="ecore:EClass" name="Step"/>
   <eClassifiers xsi:type="ecore:EClass" name="IndependentStep" eSuperTypes="#//Step"/>
   <eClassifiers xsi:type="ecore:EClass" name="DuplicateAwareStep" eSuperTypes="#//Step">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="rules" upperBound="-1"
         eType="#//KampRule" containment="true"/>
   </eClassifiers>
@@ -31,6 +32,9 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Instruction"/>
   <eClassifiers xsi:type="ecore:EClass" name="Lookup" eSuperTypes="#//Instruction"/>
+  <eClassifiers xsi:type="ecore:EClass" name="RuleReference" eSuperTypes="#//Lookup">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rule" eType="#//KampRule"/>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="CausingEntityMarker" eSuperTypes="#//Instruction"/>
   <eClassifiers xsi:type="ecore:EClass" name="PropagationReference" eSuperTypes="#//Lookup">
     <eStructuralFeatures xsi:type="ecore:EReference" name="feature" eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EStructuralFeature"/>
