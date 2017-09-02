@@ -18,7 +18,7 @@
     <genClasses ecoreClass="KampRuleLanguage.ecore#//KampRule">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute KampRuleLanguage.ecore#//KampRule/name"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//KampRule/source"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//KampRule/lookups"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//KampRule/instructions"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//KampRule/modificationMark"/>
     </genClasses>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//ModificationMark">
@@ -27,7 +27,9 @@
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//ModificationMark/target"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute KampRuleLanguage.ecore#//ModificationMark/targetMethod"/>
     </genClasses>
+    <genClasses ecoreClass="KampRuleLanguage.ecore#//Instruction"/>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//Lookup"/>
+    <genClasses ecoreClass="KampRuleLanguage.ecore#//CausingEntityMarker"/>
     <genClasses ecoreClass="KampRuleLanguage.ecore#//PropagationReference">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference KampRuleLanguage.ecore#//PropagationReference/feature"/>
     </genClasses>
