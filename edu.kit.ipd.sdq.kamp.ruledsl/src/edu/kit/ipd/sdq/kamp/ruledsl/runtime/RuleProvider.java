@@ -51,7 +51,7 @@ public class RuleProvider implements IRuleProvider {
 	private IConfiguration configuration;
 
 	@Override
-	public final void applyAllRules(AbstractArchitectureVersion version, ChangePropagationStepRegistry registry) {
+	public final void applyAllRules(AbstractArchitectureVersion<?> version, ChangePropagationStepRegistry registry) {
 		if(!REPORTING.isInitialized()) {
 			REPORTING.init();
 		}

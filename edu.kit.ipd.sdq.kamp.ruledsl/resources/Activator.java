@@ -117,7 +117,6 @@ public class Activator extends AbstractUIPlugin implements BundleActivator {
         this.ruleProvider.runEarlyHook(rules -> {
 	        // 1. Inject the graph we created for DI in every method which is annotated with @KampGraph
         	//    The method must have the following parameter types: KampRuleGraph
-        	
 	        Set<Method> annotatedMethods = getReflectionsForSrcPackage().getMethodsAnnotatedWith(KampGraph.class);
 	        annotatedMethods.stream().forEach(m -> {
 		 		// find the corresponding instance

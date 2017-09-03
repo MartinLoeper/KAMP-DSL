@@ -125,7 +125,6 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 	def createFilteredEReferenceScope(MetaclassReference sourceEClass, EClass targetEClass) {
 		val featuresOfSource = sourceEClass.metaclass.EAllStructuralFeatures;
 		if (sourceEClass !== null && targetEClass !== null) {
-			featuresOfSource.stream.forEach[f | println(f.EType + "-" + targetEClass + targetEClass.isSubtype(f.EType))];
 			createScope(IScope.NULLSCOPE, featuresOfSource.filter[feature | targetEClass.isSubtype(feature.EType)].iterator, [
 				EObjectDescription.create(it.name, it)
 			])

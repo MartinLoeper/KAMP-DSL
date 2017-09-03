@@ -218,7 +218,7 @@ class KampRuleLanguageJvmModelInferrer extends AbstractModelInferrer {
 					
 					//«generateSourceMarkerParameter(hasSourceMarkerFinal, rule.source.metaclass.name.toFirstLower)»
 					val StringConcatenationClient strategy = '''
-								«typeRef(Stream, typeRef(CausingEntityMapping, typeRef(rule.source.metaclass.instanceClass), typeRef(EObject)))» input = «Stream».of(«rule.source.metaclass.name.toFirstLower + "Mapping"»)«IF hasSourceMarkerFinal».peek(e -> e.getCausingEntities().add(«rule.source.metaclass.name.toFirstLower + "Mapping"».getAffectedElement()));«ELSE»;«ENDIF»
+								«typeRef(Stream, typeRef(CausingEntityMapping, typeRef(rule.source.metaclass.instanceClass), typeRef(EObject)))» input = «Stream».of(«rule.source.metaclass.name.toFirstLower + "Mapping"»)«IF hasSourceMarkerFinal».peek(e -> e.addCausingEntityDistinct(«rule.source.metaclass.name.toFirstLower + "Mapping"».getAffectedElement()));«ELSE»;«ENDIF»
 								
 								«FOR x : rule.lookups»
 									«x.generateCodeForRule(theClass, isRuleMarkedForCausingEntities(x, causingEntityLookups))»
