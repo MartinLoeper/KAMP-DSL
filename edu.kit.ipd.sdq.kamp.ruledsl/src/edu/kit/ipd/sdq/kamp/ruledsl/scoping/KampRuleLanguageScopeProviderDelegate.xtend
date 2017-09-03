@@ -30,10 +30,10 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 	override getScope(EObject context, EReference reference) {
 		if (context instanceof KampRule && reference.equals(METACLASS_REFERENCE__METACLASS))
 			return IScope.NULLSCOPE 
-		else if (context instanceof BackwardEReference && reference.class.isAssignableFrom(METACLASS_REFERENCE__METACLASS.class))
+		else if (context instanceof BackwardEReference && reference.equals(KampRuleLanguagePackage.Literals.PROPAGATION_REFERENCE__FEATURE))
 			return createFilteredEReferenceScope((context as BackwardEReference)?.mclass, 
 				(context as Lookup)?.previousMetaclass) 
-		else if (context instanceof PropagationReference && reference.class.isAssignableFrom(METACLASS_REFERENCE__METACLASS.class)) {
+		else if (context instanceof PropagationReference && reference.equals(KampRuleLanguagePackage.Literals.PROPAGATION_REFERENCE__FEATURE)) {
 			return createEReferenceScope((context as Lookup).previousMetaclass)
 		} else if(context instanceof RuleReference && reference.equals(KampRuleLanguagePackage.Literals.RULE_REFERENCE__RULE)) {
 			var RuleFile ruleFile = retrieveRuleFile(context);
@@ -125,7 +125,8 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 	def createFilteredEReferenceScope(MetaclassReference sourceEClass, EClass targetEClass) {
 		val featuresOfSource = sourceEClass.metaclass.EAllStructuralFeatures;
 		if (sourceEClass !== null && targetEClass !== null) {
-			createScope(IScope.NULLSCOPE, featuresOfSource.filter[feature | feature.EType.isSubtype(targetEClass)].iterator, [
+			featuresOfSource.stream.forEach[f | println(f.EType + "-" + targetEClass + targetEClass.isSubtype(f.EType))];
+			createScope(IScope.NULLSCOPE, featuresOfSource.filter[feature | targetEClass.isSubtype(feature.EType)].iterator, [
 				EObjectDescription.create(it.name, it)
 			])
 		} else {
@@ -133,12 +134,15 @@ class KampRuleLanguageScopeProviderDelegate extends MirBaseScopeProviderDelegate
 		}
 	}
 	
-	// TODO check again if this is correct!
-	def Boolean isSubtype(EClassifier superType, EClass subType) {
+	def Boolean isSubtype(EClass superType, EClassifier subType) {
 		if(subType.equals(superType)) {
 			return true
 		}
 		
-		return subType.EAllSuperTypes.exists[sType | sType.equals(subType)]
+		if(subType instanceof EClass) {	
+			return subType.EAllSuperTypes.exists[sType | sType.equals(superType)]
+		} else {
+			return false;
+		}
 	}
 }
